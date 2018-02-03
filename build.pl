@@ -9,10 +9,9 @@ my $BIN = "./bin";
 my $COMPILER = "gfortran";
 my @FILES = qw/
     self_library.f90
-    mcnp_random.f90
-    steady_state_slab.f90
+    steady_state_slab_non_mark.f90
 /;
-my $EXEC_NAME = "steady_state_slab.exe";
+my $EXEC_NAME = "steady_state_slab_non_mark.exe";
 
 sub main {
     print "Compiling using $COMPILER...\n";

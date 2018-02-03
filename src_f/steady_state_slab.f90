@@ -5,11 +5,12 @@ program steady_state_slab
     implicit none
 
     ! Constant parameters
+    integer(8), parameter :: &
+        num_iter = 5000
     integer, parameter :: &
         num_cells = 100, &
         num_groups = 1, &
         num_ords = 16, &
-        num_iter = 5000, &
         num_materials = 2
 
     ! Material properties
@@ -36,17 +37,19 @@ program steady_state_slab
         macro_scat
     ! Allocated as (num_groups, num_cells)
     double precision, dimension(:, :), allocatable :: &
-        macro_fis, macro_tot
+        macro_fis, macro_tot, phi_morph, phi_morph_old
     double precision, dimension(num_groups) :: &
         chi, nu
 
     ! Calculation variables
+    integer(8) :: &
+        iterations
     integer :: &
-        i, c, g, g_prime, m, iterations, num_ind_cells
+        i, c, g, g_prime, m, num_ind_cells
     logical :: &
         cont_calc
     double precision :: &
-        tolerance, scatter_into, fission_into, weighted_sum, err
+        tolerance, scatter_into, fission_into, weighted_sum, err, cons_distance
     double precision, dimension(num_groups, num_cells) :: &
         phi_new, phi_old, scat_source, fis_source, spont_source, tot_source
     double precision, dimension(num_cells, num_materials) :: &
@@ -93,6 +96,8 @@ program steady_state_slab
         phi_old = phi_new  ! 1/cm^2-s-MeV
 
         ! Fill Markovian geometry
+        ! Allocations and deallocations of delta_x and materials should be
+        ! Handled by the subroutine
         call get_geometry(delta_x, materials, chord_a, chord_b, thickness, &
                           num_ind_cells)
 
@@ -114,12 +119,16 @@ program steady_state_slab
         allocate(psi_i_m(num_groups, num_ind_cells, num_ords))
         psi_i_m = 0.0d+0  ! 1/cm^2-s-MeV-strad
 
+        ! Allocate phi calculations
+        allocate(phi_morph(num_groups, num_ind_cells))
+
         ! Determine sources for each cell and group
-        do c = 1, num_cells
+        do c = 1, num_ind_cells
             do g = 1, num_groups
                 ! Scatter into, fission into, in-group scattering
                 scatter_into = 0.0d+0  ! neutrons
                 fission_into = 0.0d+0  ! neutrons
+                cons_distance = 0.0d+0  ! cm
                 do g_prime = 1, num_groups
                     scatter_into = scatter_into + macro_scat(g_prime, g, c) &
                                    * phi_new(g_prime, c)
@@ -233,14 +242,14 @@ program steady_state_slab
         end do
 
         ! Relative error
-        iterations = iterations + 1
+        iterations = iterations + int(1, 8)
         err = maxval(dabs((phi_new - phi_old)) / phi_new)
         if (err <= tolerance) then
             cont_calc = .false.
             print *, "Quit after ", iterations , " iterations"
         else if (iterations > num_iter) then
             cont_calc = .false.
-            print *, "Quit after ", iterations, " iterations"
+            print *, "Quit after maximum ", iterations, " iterations"
         end if
 
         ! Deallocations

@@ -34,6 +34,11 @@ module geometry_gen
         end if
         allocate(x_dist(0))
 
+        if (allocated(materials)) then
+            deallocate(materials)
+        end if
+        allocate(materials(0))
+
         if (num_cells > 0) then
             num_cells = 0
         end if
