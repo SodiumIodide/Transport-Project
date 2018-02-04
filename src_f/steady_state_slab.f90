@@ -266,7 +266,7 @@ program steady_state_slab
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
     open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
          status="replace", action="write")
-    do i=1,num_cells
+    do i = 1, num_cells
         write(7,*) cell_vector(i), phi_new(1,i)
     end do
     close(7)

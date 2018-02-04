@@ -83,20 +83,20 @@ program steady_state_slab
     ! Boundary conditions
     ! Left boundary
     psi_bound_l(:, :) = 1.0d+0  ! Isotropic source
-    ! psi_bound_l(:, :) = 0.0d+0  ! Vacuum
-    ! psi_bound_l(:, 1) = 1.0d+0  ! Beam source (in conj. with vacuum)
+    !psi_bound_l(:, :) = 0.0d+0  ! Vacuum
+    !psi_bound_l(:, num_ords) = 1.0d+0  ! Beam source (in conj. with vacuum)
 
     ! Right boundary
-    psi_bound_r(:, :) = 0.0d+0  ! Isotropic source
-    ! psi_bound_r(:, :) = 0.0d+0  ! Vacuum
-    ! psi_bound_r(:, num_ords) = 1.0d+0  ! Beam source (in conj. with vacuum)
+    !psi_bound_r(:, :) = 1.0d+0  ! Isotropic source
+    psi_bound_r(:, :) = 0.0d+0  ! Vacuum
+    !psi_bound_r(:, 1) = 1.0d+0  ! Beam source (in conj. with vacuum)
 
     ! Tolerance for ending calculation
-    tolerance = 1e-8
+    tolerance = 1e-15
 
     ! Calculation: iterations
     cont_calc = .true.
-    iterations = 0
+    iterations = int(0, 8)
     do while (cont_calc)
         phi_old = phi_new  ! 1/cm^2-s-MeV
         ! Determine sources for each cell and group
@@ -235,32 +235,35 @@ program steady_state_slab
     total_abs = 0.0d+0
     balance_source_l = 0.0d+0
     balance_source_r = 0.0d+0
+    ! Tally the boundary sources (currents)
     do g = 1, num_groups
         do m = 1, (num_ords / 2)
-            balance_source_r = balance_source_r + 0.5d+0 * weights(m) * psi_bound_r(g, m)
+            balance_source_r = balance_source_r + 0.5d+0 * weights(m) * dabs(mu(m)) * psi_bound_r(g, m)
         end do
         do m = (num_ords / 2 + 1), num_ords
-            balance_source_l = balance_source_l + 0.5d+0 * weights(m) * psi_bound_l(g, m)
+            balance_source_l = balance_source_l + 0.5d+0 * weights(m) * dabs(mu(m)) * psi_bound_l(g, m)
         end do
     end do
+    ! Tally the overall losses due to leakage and absorption
     do c = 1, num_cells
         do g = 1, num_groups
             ! Leakage in neg. direction from left face
             if (c == 1) then
-                do m = (num_ords / 2 + 1), num_ords
-                    leakage_l = leakage_l + 0.5d+0 * mu(m) * weights(m) * psi(g, c, m)
+                do m = 1, (num_ords / 2)
+                    leakage_l = leakage_l + 0.5d+0 * dabs(mu(m)) * weights(m) * psi(g, c, m)
                 end do
             ! Leakage in pos. direction from right face
             else if (c == num_cells) then
-                do m = 1, (num_ords / 2)
-                    leakage_r = leakage_r + 0.5d+0 * mu(m) * weights(m) * psi(g, c, m)
+                do m = (num_ords / 2 + 1), num_ords
+                    leakage_r = leakage_r + 0.5d+0 * dabs(mu(m)) * weights(m) * psi(g, c, m)
                 end do
             end if
-            do m = 1, num_ords
-                total_abs = total_abs + (macro_tot(g, c) - macro_scat(g, g, c)) * delta_x(c) * phi_new(g, c)
-            end do
+            ! Total absorption in system
+            total_abs = total_abs + (macro_tot(g, c) - macro_scat(g, g, c)) * delta_x(c) * phi_new(g, c)
         end do
     end do
+    print *, "Source is ", balance_source_l + balance_source_r
+    print *, "Loss is ", leakage_l + leakage_r + total_abs
     balance = balance_source_l + balance_source_r - leakage_l - leakage_r - total_abs
     print *, "Balance (source - loss) is ", balance
 
@@ -268,7 +271,7 @@ program steady_state_slab
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
     open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
          status="replace", action="write")
-    do i=1,num_cells
+    do i = 1, num_cells
         write(7,*) cell_vector(i), phi_new(1,i)
     end do
     close(7)
