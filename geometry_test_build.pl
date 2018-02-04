@@ -45,7 +45,7 @@ sub comp {
 sub clean {
     opendir(my $dir, $SRC) or die "Couldn't opn $SRC: $!";
     while (my $filename = readdir($dir)) {
-        unlink "$SRC/$filename" if $filename =~ /.*\.o$/;
+        unlink "$SRC/$filename" if $filename =~ /.*[\.o|\.exe]$/;
     }
     print "$SRC cleaned of binary\n";
 }

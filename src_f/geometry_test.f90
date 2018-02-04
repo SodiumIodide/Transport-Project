@@ -2,6 +2,7 @@ program geometry_test
     !use dynamic_arrays
     !use mcnp_random
     use geometry_gen
+
     implicit none
 
     double precision, dimension(:), allocatable :: &
@@ -15,8 +16,8 @@ program geometry_test
 
     thickness = 10.0d+0  ! cm
     cons_thickness = 0.0d+0  ! cm
-    chord_a = 0.5d+0  ! cm
-    chord_b = 0.5d+0  ! cm
+    chord_a = 1.0d+0  ! cm
+    chord_b = 1.0d+0  ! cm
     num_cells = 0
 
     allocate(x_dist(0))
@@ -39,7 +40,7 @@ program geometry_test
 
     open(unit=7, file="./out/geometry_test.out", form="formatted", &
          status="replace", action="write")
-    do i = 1, num_cells
+    do i = 1, num_cells + 1
         write(7,*) x_arr(i), materials(i)
     end do
 

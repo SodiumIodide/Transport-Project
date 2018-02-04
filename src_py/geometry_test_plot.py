@@ -29,35 +29,38 @@ def main():
                 if material[-1] == 1:
                     if switch_flag_2:
                         mat_2_x = np.append(mat_2_x, x_values[-1])
+                        mat_2 = np.append(mat_2, 2)
                         switch_flag_2 = False
                     switch_flag_1 = True
                     mat_1_x = np.append(mat_1_x, x_values[-1])
                     mat_1 = np.append(mat_1, 1)
-                    mat_1 = np.append(mat_1, 1)
                 if material[-1] == 2:
                     if switch_flag_1:
                         mat_1_x = np.append(mat_1_x, x_values[-1])
+                        mat_1 = np.append(mat_1, 1)
                         switch_flag_1 = False
                     switch_flag_2 = True
                     mat_2_x = np.append(mat_2_x, x_values[-1])
                     mat_2 = np.append(mat_2, 2)
-                    mat_2 = np.append(mat_2, 2)
     if material[-1] == 1:
-        mat_1_x = np.append(mat_1_x, x_values[-1])
+        mat_1_x = mat_1_x[0:-1]
     else:
-        mat_2_x = np.append(mat_2_x, x_values[-1])
+        mat_2_x = mat_2_x[0:-1]
     counter = 0
-    print(mat_1_x[counter: counter + 2])
     while counter < len(mat_1_x):
         plt.plot(mat_1_x[counter:counter + 2], mat_1[counter:counter + 2], color='b')
+        plt.axvline(x=mat_1_x[counter + 1], linestyle=':', color='k')
         counter += 2
     counter = 0
     while counter < len(mat_2_x):
         plt.plot(mat_2_x[counter:counter + 2], mat_2[counter:counter + 2], color='r')
+        plt.axvline(x=mat_2_x[counter + 1], linestyle=':', color='k')
         counter += 2
     plt.title("Sample Markovian Geometry")
     plt.xlabel("x")
     plt.ylabel("Material Number")
+    plt.grid(which='major', axis='x')
+    plt.ylim(0, 5)
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
     with open("./out/geometry_1.out", "w") as out_1:

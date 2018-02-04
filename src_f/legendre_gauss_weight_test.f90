@@ -1,5 +1,6 @@
 program legendre_gauss_weight
     use self_library
+
     implicit none
 
     double precision, parameter :: intv_a = 1.d0

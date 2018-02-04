@@ -4,7 +4,7 @@ use strict;
 
 # Execute the compiled Fortran files and produce a plot
 
-my $EXEC_NAME = "steady_state_slab.exe";
+my $EXEC_NAME = "steady_state_slab_non_mark.exe";
 
 sub main() {
     print "Running $EXEC_NAME...\n";

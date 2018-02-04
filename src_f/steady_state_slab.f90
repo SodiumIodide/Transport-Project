@@ -1,6 +1,6 @@
 program steady_state_slab
     use self_library
-    use mcnp_random
+    use geometry_gen
 
     implicit none
 
@@ -28,7 +28,7 @@ program steady_state_slab
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)
     double precision, dimension(:), allocatable :: &
-        delta_x
+        delta_x, x_points
     ! Allocated as (num_ind_cells) (by subroutine)
     integer, dimension(:), allocatable :: &
         materials
@@ -47,7 +47,7 @@ program steady_state_slab
     integer :: &
         i, c, g, g_prime, m, num_ind_cells
     logical :: &
-        cont_calc
+        cont_calc, point_found
     double precision :: &
         tolerance, scatter_into, fission_into, weighted_sum, err, cons_distance
     double precision, dimension(num_groups, num_cells) :: &
@@ -98,8 +98,8 @@ program steady_state_slab
         ! Fill Markovian geometry
         ! Allocations and deallocations of delta_x and materials should be
         ! Handled by the subroutine
-        call get_geometry(delta_x, materials, chord_a, chord_b, thickness, &
-                          num_ind_cells)
+        call get_geometry(delta_x, x_points, materials, chord_a, chord_b, &
+                          thickness, num_ind_cells)
 
         ! Allocate and define properties
         allocate(macro_scat(num_groups, num_groups, num_ind_cells))
@@ -129,6 +129,8 @@ program steady_state_slab
                 scatter_into = 0.0d+0  ! neutrons
                 fission_into = 0.0d+0  ! neutrons
                 cons_distance = 0.0d+0  ! cm
+                ! For generating sources, go until the point is found (mapping)
+                point_found = .false.
                 do g_prime = 1, num_groups
                     scatter_into = scatter_into + macro_scat(g_prime, g, c) &
                                    * phi_new(g_prime, c)
@@ -266,7 +268,7 @@ program steady_state_slab
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
     open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
          status="replace", action="write")
-    do i = 1, num_cells
+    do i = 1, num_cells + 1
         write(7,*) cell_vector(i), phi_new(1,i)
     end do
     close(7)
