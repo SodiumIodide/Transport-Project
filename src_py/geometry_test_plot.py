@@ -62,7 +62,6 @@ def main():
     plt.grid(which='major', axis='x')
     plt.ylim(0, 5)
     plt.savefig(f"./plots/{plotname}")
-    print(f"Plot saved as {plotname}")
     with open("./out/geometry_1.out", "w") as out_1:
         for i, point in enumerate(mat_1_x):
             out_1.write("{0}, {1}\n".format(point, mat_1[i]))
