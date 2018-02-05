@@ -46,9 +46,9 @@ program steady_state_slab
     double precision, dimension(num_groups, num_cells) :: &
         phi_new, phi_old, scat_source, fis_source, spont_source, tot_source
     double precision, dimension(num_groups, num_cells, num_ords) :: &
-        psi, psi_refl, psi_i_p, psi_i_m
+        psi, psi_i_p, psi_i_m
     double precision, dimension(num_groups, num_ords) :: &
-        psi_bound_l, psi_bound_r
+        psi_bound_l, psi_bound_r, psi_refl_l, psi_refl_r
     double precision, dimension(num_ords) :: &
         ordinates, weights, mu
 
@@ -64,9 +64,10 @@ program steady_state_slab
     phi_new(:, :) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
     phi_old(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     psi(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad, angular neutron flux
-    psi_refl(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
     psi_i_p(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
     psi_i_m(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_refl_l(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_refl_r(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
     scat_source(:, :) = 0.0d+0  ! 1/cm^3-s
     fis_source(:, :) = 0.0d+0  ! 1/cm^3-s
     spont_source(:, :) = 0.0d+0  ! 1/cm^3-s
@@ -80,11 +81,11 @@ program steady_state_slab
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
 
-    ! Boundary conditions
+    ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
-    psi_bound_l(:, :) = 1.0d+0  ! Isotropic source
-    !psi_bound_l(:, :) = 0.0d+0  ! Vacuum
-    !psi_bound_l(:, num_ords) = 1.0d+0  ! Beam source (in conj. with vacuum)
+    !psi_bound_l(:, :) = 1.0d+0  ! Isotropic source
+    psi_bound_l(:, :) = 0.0d+0  ! Vacuum
+    psi_bound_l(:, num_ords) = 1.0d+0  ! Beam source (in conj. with vacuum)
 
     ! Right boundary
     !psi_bound_r(:, :) = 1.0d+0  ! Isotropic source
@@ -127,12 +128,12 @@ program steady_state_slab
                 ! Lewis and Miller Eq. 3-40
                 psi(g, 1, m) = (1.0d+0 + (macro_tot(g, 1) * delta_x(1)) &
                                 / (2.0d+0 * dabs(mu(m))))**(-1) &
-                               * (psi_bound_l(g, m) + psi_refl(g, 1, m) &
+                               * (psi_bound_l(g, m) + psi_refl_l(g, m) &
                                   + (tot_source(g, 1) * delta_x(1)) &
                                   / (2.0d+0 * dabs(mu(m))))
                 ! Lewis and Miller Eq. 3-41
                 psi_i_p(g, 1, m) = 2.0d+0 * psi(g, 1, m) - psi_bound_l(g, m) &
-                                   - psi_refl(g, 1, m)
+                                   - psi_refl_l(g, m)
             end do
         end do
         ! Rest of the cells (sans left bounding cell)
@@ -163,14 +164,14 @@ program steady_state_slab
                                                 * delta_x(num_cells)) &
                                         / (2.0d+0 * dabs(mu(m))))**(-1) &
                                        * (psi_bound_r(g, m) &
-                                          + psi_refl(g, num_cells, m) &
+                                          + psi_refl_r(g, m) &
                                           + (tot_source(g, num_cells) &
                                              * delta_x(num_cells)) &
                                           / (2.0d+0 * dabs(mu(m))))
                 ! Lewis and Miller Eq. 3-43
                 psi_i_m(g, num_cells, m) = 2.0d+0 * psi(g, num_cells, m) &
                                            - psi_bound_r(g, m) &
-                                           - psi_refl(g, num_cells, m)
+                                           - psi_refl_r(g, m)
             end do
         end do
         ! Rest of the cells (sans right bounding cell)
@@ -196,25 +197,25 @@ program steady_state_slab
             do m = 1, num_ords
                 if (m >= num_ords / 2 + 1) then
                     ! Last cell, pos. angular flux reflected to neg. direction
-                    psi_refl(g, num_cells, num_ords-m+1) = alpha_r &
-                                                           * psi_i_p(g, num_cells, m)
+                    psi_refl_r(g, num_ords-m+1) = alpha_r &
+                                                  * psi_i_p(g, num_cells, m)
                 else
                     ! First cell, neg. angular flux reflected to pos. direction
-                    psi_refl(g, 1, num_ords-m+1) = alpha_l &
-                                                   * psi_i_m(g, 1, m)
+                    psi_refl_l(g, num_ords-m+1) = alpha_l &
+                                                  * psi_i_m(g, 1, m)
                 end if
             end do
         end do
 
         ! Calculate phi from psi
         ! Lewis and Miller Eq. 3-5
-        do c=1,num_cells
-            do g = 1,num_groups
+        do c = 1, num_cells
+            do g = 1, num_groups
                 weighted_sum = 0.0d+0
-                do m=1,num_ords
+                do m = 1, num_ords
                     weighted_sum = weighted_sum + weights(m) * psi(g, c, m)
                 end do
-                phi_new(g, c) = 0.5d+0 * weighted_sum
+                phi_new(g, c) = 0.5d+0 * weighted_sum  ! 1/cm^2-s-MeV
             end do
         end do
 

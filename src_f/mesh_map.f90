@@ -13,7 +13,7 @@ module mesh_map
             unstruct_delta
         double precision, dimension(struct_size), intent(in) :: &
             struct
-        double precision, dimension(:), allocatable, intent(inout) :: &
+        double precision, dimension(:, :), allocatable, intent(inout) :: &
             unstruct
         double precision, intent(in) :: &
             struct_delta
@@ -36,7 +36,7 @@ module mesh_map
         if (allocated(unstruct)) then
             deallocate(unstruct)
         end if
-        allocate(unstruct(unstruct_size))
+        allocate(unstruct(1, unstruct_size))
 
         ! Loop for mapping the structured to the unstructured mesh
         do i = 1, unstruct_size
@@ -81,15 +81,17 @@ module mesh_map
                     counter = counter - 1
                 end if
             end do
-            unstruct(i) = weight_tally / unstruct_delta(i)  ! unit
+            unstruct(1, i) = weight_tally / unstruct_delta(i)  ! unit
         end do
     end subroutine struct_to_unstruct
 
-    subroutine unstruct_to_struct(unstruct, unstruct_delta, unstruct_size, struct, struct_delta, struct_size)
+    subroutine unstruct_to_struct(unstruct, unstruct_delta, struct, struct_delta, struct_size)
         integer, intent(in) :: &
-            struct_size, unstruct_size
+            struct_size
         double precision, dimension(:), allocatable, intent(in) :: &
-            unstruct_delta, unstruct
+            unstruct_delta
+        double precision, dimension(:, :), allocatable, intent(in) :: &
+            unstruct
         double precision, dimension(struct_size), intent(inout) :: &
             struct
         double precision, intent(in) :: &
@@ -122,7 +124,7 @@ module mesh_map
 
             ! Carry over leftover distance
             if (leftover_distance /= 0.0d+0) then
-                weight_tally = weight_tally + leftover_distance * unstruct(counter)  ! unit*cm
+                weight_tally = weight_tally + leftover_distance * unstruct(1, counter)  ! unit*cm
                 distance_tally = distance_tally + leftover_distance  ! cm
                 leftover_distance = 0.0d+0  ! cm
             end if
@@ -147,7 +149,7 @@ module mesh_map
                 distance_tally = distance_tally + delta  ! cm
 
                 ! Apply linear weighted tally
-                weight_tally = weight_tally + delta * unstruct(counter)  ! unit*cm
+                weight_tally = weight_tally + delta * unstruct(1, counter)  ! unit*cm
 
                 ! Reset counter to use leftover distance and re-use value
                 if (distance_overlap) then

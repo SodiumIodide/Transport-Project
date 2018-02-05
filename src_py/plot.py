@@ -21,9 +21,10 @@ def main():
                 flux = np.append(flux,
                                  float(re.match(pattern, line).group(2)))
     plt.plot(x_values, flux)
+    plt.grid(which='major', axis='both')
     plt.title("Steady State Slab")
-    plt.xlabel("x")
-    plt.ylabel("Flux")
+    plt.xlabel("x (cm)")
+    plt.ylabel("Flux (1/cm^2-s-MeV)")
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
 
