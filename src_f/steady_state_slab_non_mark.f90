@@ -96,6 +96,7 @@ program steady_state_slab
 
     ! Calculation: iterations
     cont_calc = .true.
+    ! Start counter at zero
     iterations = int(0, 8)
     do while (cont_calc)
         phi_old = phi_new  ! 1/cm^2-s-MeV

@@ -1,6 +1,7 @@
 program steady_state_slab
     use self_library
     use geometry_gen
+    use mesh_map
 
     implicit none
 
@@ -22,7 +23,8 @@ program steady_state_slab
         chord_a = 0.05d+0, &  ! cm
         chord_b = 0.05d+0, &  ! cm
         alpha_l = 0.0d+0, &
-        alpha_r = 0.0d+0
+        alpha_r = 0.0d+0, &
+        struct_thickness = thickness / dble(num_cells)  ! cm
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
     ! Material variables
@@ -37,7 +39,7 @@ program steady_state_slab
         macro_scat
     ! Allocated as (num_groups, num_cells)
     double precision, dimension(:, :), allocatable :: &
-        macro_fis, macro_tot, phi_morph, phi_morph_old
+        macro_fis, macro_tot, phi_morph
     double precision, dimension(num_groups) :: &
         chi, nu
 
@@ -91,7 +93,8 @@ program steady_state_slab
 
     ! Calculation: iterations
     cont_calc = .true.
-    iterations = int(0, 8)  ! Start counter at zero
+    ! Start counter at zero
+    iterations = int(0, 8)
     do while (cont_calc)
         phi_old = phi_new  ! 1/cm^2-s-MeV
 
@@ -121,6 +124,7 @@ program steady_state_slab
 
         ! Allocate phi calculations
         allocate(phi_morph(num_groups, num_ind_cells))
+        call struct_to_unstruct(phi_new, )
 
         ! Determine sources for each cell and group
         do c = 1, num_ind_cells
