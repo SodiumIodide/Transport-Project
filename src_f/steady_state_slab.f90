@@ -16,9 +16,6 @@ program steady_state_slab
 
     ! Material properties
     double precision, parameter :: &
-        scat_const = 0.2d+0, &  ! 1/cm
-        fis_const = 0.0d+0, &  ! 1/cm
-        tot_const = 1.0d+0, &  ! 1/cm
         thickness = 1.0d+0, &  ! cm
         chord_a = 0.05d+0, &  ! cm
         chord_b = 0.05d+0, &  ! cm
@@ -28,6 +25,11 @@ program steady_state_slab
         spont_source_const = 0.0d+0  ! 1/cm^3
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
+    double precision, dimension(2), parameter :: &
+        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
+        fis_const = (/0.0d+0, 0.0d+0/), &  ! 1/cm
+        tot_const = (/1.0d+0, 1.0d+0/)  ! 1/cm
+
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)
     double precision, dimension(:), allocatable :: &
@@ -35,12 +37,15 @@ program steady_state_slab
     ! Allocated as (num_ind_cells) (by subroutine)
     integer, dimension(:), allocatable :: &
         materials
-    ! Allocated as (num_groups, num_groups, num_cells)
-    double precision, dimension(:, :, :), allocatable :: &
+    ! Allocated as (num_groups, num_groups, num_cells, num_materials)
+    double precision, dimension(:, :, :, :), allocatable :: &
         macro_scat
     ! Allocated as (num_groups, num_cells)
     double precision, dimension(:, :), allocatable :: &
-        macro_fis, macro_tot, scat_source, fis_source, spont_source, tot_source
+        scat_source, fis_source, spont_source, tot_source
+    ! Allocated as (num_groups, num_cells, num_materials)
+    double precision, dimension(:, :, :), allocatable :: &
+        macro_fis, macro_tot
     double precision, dimension(num_groups) :: &
         chi, nu
 
@@ -48,20 +53,22 @@ program steady_state_slab
     integer(8) :: &
         iterations
     integer :: &
-        i, c, g, g_prime, m, num_ind_cells
+        i, c, g, g_prime, m, k, num_ind_cells
     logical :: &
         cont_calc, point_found
     double precision :: &
         tolerance, scatter_into, fission_into, weighted_sum, err, cons_distance
     double precision, dimension(num_groups, num_cells) :: &
-        phi_new, phi_old, phi_1, phi_2
+        phi_new, phi_old
+    double precision, dimension(num_groups, num_cells, num_materials) :: &
+        phi_div
     ! Allocated as (num_groups, num_cells)
     double precision, dimension(:, :), allocatable :: &
         phi_morph_1, phi_morph_2, phi_morph
-    ! Allocated as (num_groups, num_cells, num_ords)
-    double precision, dimension(:, :, :), allocatable :: &
+    ! Allocated as (num_groups, num_cells, num_ords, num_materials)
+    double precision, dimension(:, :, :, :), allocatable :: &
         psi, psi_i_p, psi_i_m
-    double precision, dimension(num_groups, num_ords) :: &
+    double precision, dimension(num_groups, num_ords, num_materials) :: &
         psi_bound_l, psi_bound_r, psi_refl_l, psi_refl_r
     double precision, dimension(num_ords) :: &
         ordinates, weights, mu
@@ -77,15 +84,14 @@ program steady_state_slab
     phi_new(:, :) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
     phi_old(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     ! Material dependent fluxes
-    phi_1(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
-    phi_2(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
+    phi_div(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV
     ! Can adjust boundaries by group and by ordinate
-    psi_bound_l(:, :) = 1.0d+0  ! 1/cm^2-s-MeV-strad
-    psi_bound_r(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_bound_l(:, :, :) = 1.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_bound_r(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
 
     ! Initial reflection values
-    psi_refl_l(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
-    psi_refl_r(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_refl_l(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_refl_r(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
 
     ! Initial value (assigned via get_geometry subroutine)
     num_ind_cells = 0
@@ -110,20 +116,22 @@ program steady_state_slab
                           thickness, num_ind_cells)
 
         ! Allocate and define properties
-        allocate(macro_scat(num_groups, num_groups, num_ind_cells))
-        macro_scat(:, :, :) = scat_const  ! 1/cm
-        allocate(macro_fis(num_groups, num_cells))
-        macro_fis(:, :) = fis_const  ! 1/cm
-        allocate(macro_tot(num_groups, num_cells))
-        macro_tot(:, :) = tot_const  ! 1/cm
+        allocate(macro_scat(num_groups, num_groups, num_ind_cells, num_materials))
+        allocate(macro_fis(num_groups, num_cells, num_materials))
+        allocate(macro_tot(num_groups, num_cells, num_materials))
+        do k = 1, num_materials
+            macro_scat(:, :, :, k) = scat_const(k)  ! 1/cm
+            macro_fis(:, :, k) = fis_const(k)  ! 1/cm
+            macro_tot(:, :, k) = tot_const(k)  ! 1/cm
+        end do
 
         ! Allocate and define calculational arrays
-        allocate(psi(num_groups, num_ind_cells, num_ords))
-        psi(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
-        allocate(psi_i_p(num_groups, num_ind_cells, num_ords))
-        psi_i_p = 0.0d+0  ! 1/cm^2-s-MeV-strad
-        allocate(psi_i_m(num_groups, num_ind_cells, num_ords))
-        psi_i_m = 0.0d+0  ! 1/cm^2-s-MeV-strad
+        allocate(psi(num_groups, num_ind_cells, num_ords, num_materials))
+        psi(:, :, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+        allocate(psi_i_p(num_groups, num_ind_cells, num_ords, num_materials))
+        psi_i_p(:, :, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+        allocate(psi_i_m(num_groups, num_ind_cells, num_ords, num_materials))
+        psi_i_m(:, :, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
 
         ! Allocate and define initial source terms
         allocate(scat_source(num_groups, num_ind_cells))
@@ -143,22 +151,24 @@ program steady_state_slab
         ! Determine sources for each cell and group
         do c = 1, num_ind_cells
             do g = 1, num_groups
-                ! Scatter into, fission into, in-group scattering
-                scatter_into = 0.0d+0  ! neutrons
-                fission_into = 0.0d+0  ! neutrons
-                cons_distance = 0.0d+0  ! cm
-                ! For generating sources, go until the point is found (mapping)
-                point_found = .false.
-                do g_prime = 1, num_groups
-                    scatter_into = scatter_into + macro_scat(g_prime, g, c) &
-                                   * phi_morph(g_prime, c)
-                    fission_into = fission_into + chi(g) * nu(g_prime) &
-                                   * macro_fis(g_prime, c) * phi_morph(g_prime, c)
+                do k = 1, num_materials
+                    ! Scatter into, fission into, in-group scattering
+                    scatter_into = 0.0d+0  ! neutrons
+                    fission_into = 0.0d+0  ! neutrons
+                    cons_distance = 0.0d+0  ! cm
+                    ! For generating sources, go until the point is found (mapping)
+                    point_found = .false.
+                    do g_prime = 1, num_groups
+                        scatter_into = scatter_into + macro_scat(g_prime, g, c) &
+                                       * phi_morph(g_prime, c)
+                        fission_into = fission_into + chi(g) * nu(g_prime) &
+                                       * macro_fis(g_prime, c) * phi_morph(g_prime, c)
+                    end do
+                    scat_source(g, c) = scatter_into
+                    fis_source(g, c) = fission_into
+                    tot_source(g, c) = scat_source(g, c) + fis_source(g, c) &
+                                       + spont_source(g, c)
                 end do
-                scat_source(g, c) = scatter_into
-                fis_source(g, c) = fission_into
-                tot_source(g, c) = scat_source(g, c) + fis_source(g, c) &
-                                   + spont_source(g, c)
             end do
         end do
 
