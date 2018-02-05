@@ -40,7 +40,7 @@ program steady_state_slab
         macro_scat
     ! Allocated as (num_groups, num_cells)
     double precision, dimension(:, :), allocatable :: &
-        macro_fis, macro_tot, phi_morph, scat_source, fis_source, spont_source, tot_source
+        macro_fis, macro_tot, scat_source, fis_source, spont_source, tot_source
     double precision, dimension(num_groups) :: &
         chi, nu
 
@@ -54,9 +54,10 @@ program steady_state_slab
     double precision :: &
         tolerance, scatter_into, fission_into, weighted_sum, err, cons_distance
     double precision, dimension(num_groups, num_cells) :: &
-        phi_new, phi_old
-    double precision, dimension(num_cells, num_materials) :: &
-        phi_mat
+        phi_new, phi_old, phi_1, phi_2
+    ! Allocated as (num_groups, num_cells)
+    double precision, dimension(:, :), allocatable :: &
+        phi_morph_1, phi_morph_2, phi_morph
     ! Allocated as (num_groups, num_cells, num_ords)
     double precision, dimension(:, :, :), allocatable :: &
         psi, psi_i_p, psi_i_m
@@ -75,6 +76,9 @@ program steady_state_slab
     ! Assignment of initial calculation variables
     phi_new(:, :) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
     phi_old(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
+    ! Material dependent fluxes
+    phi_1(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
+    phi_2(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     ! Can adjust boundaries by group and by ordinate
     psi_bound_l(:, :) = 1.0d+0  ! 1/cm^2-s-MeV-strad
     psi_bound_r(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad

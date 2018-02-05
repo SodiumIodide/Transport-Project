@@ -49,11 +49,13 @@ sub clean {
     while (my $filename = readdir($dir)) {
         unlink "$SRC/$filename" if $filename =~ /.*[\.o|\.exe]$/;
     }
+    closedir $dir;
     print "$SRC cleaned of binary\n";
-    opendir(my $dir, '.') or die "Couldn't open current directory: $!";
-    while (my $filename = readdir($dir)) {
+    opendir(my $curdir, '.') or die "Couldn't open current directory: $!";
+    while (my $filename = readdir($curdir)) {
         unlink "./$filename" if $filename =~ /.*\.mod$/;
     }
+    closedir $curdir;
     print "Working directory cleaned of compiler artifacts\n";
 }
 
