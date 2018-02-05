@@ -40,7 +40,7 @@ program geometry_test
 
     open(unit=7, file="./out/geometry_test.out", form="formatted", &
          status="replace", action="write")
-    do i = 1, num_cells + 1
+    do i = 1, num_cells
         write(7,*) x_arr(i), materials(i)
     end do
 

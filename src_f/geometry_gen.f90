@@ -36,11 +36,6 @@ module geometry_gen
         material_num = init_material
         distance = 0.0d+0  ! cm
 
-        ! Overwrite counter variable
-        if (num_cells > 0) then
-            num_cells = 0
-        end if
-
         ! Checks and (de)allocations
         ! Reallocate to 1 for initial assignment
         ! (know that arrays will be at least size 1)
@@ -63,6 +58,11 @@ module geometry_gen
         x_dist(1) = distance  ! cm
         x_arr(1) = cons_thickness  ! cm
         materials(1) = material_num
+
+        ! Overwrite counter variable (first cell starts at 0.0)
+        if (num_cells /= 1) then
+            num_cells = 1
+        end if
 
         ! Start random generation seed
         call RN_init_problem(int(12345678, 8), 1)
