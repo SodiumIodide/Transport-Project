@@ -7,6 +7,8 @@ module mesh_map
     contains
 
     subroutine struct_to_unstruct(struct, struct_delta, struct_size, unstruct, unstruct_delta, unstruct_size)
+        implicit none
+
         integer, intent(in) :: &
             struct_size, unstruct_size
         double precision, dimension(:), allocatable, intent(in) :: &
@@ -86,6 +88,8 @@ module mesh_map
     end subroutine struct_to_unstruct
 
     subroutine unstruct_to_struct(unstruct, unstruct_delta, struct, struct_delta, struct_size)
+        implicit none
+
         integer, intent(in) :: &
             struct_size
         double precision, dimension(:), allocatable, intent(in) :: &

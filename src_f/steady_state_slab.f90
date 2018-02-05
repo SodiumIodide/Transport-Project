@@ -40,8 +40,8 @@ program steady_state_slab
     ! Allocated as (num_groups, num_groups, num_cells, num_materials)
     double precision, dimension(:, :, :, :), allocatable :: &
         macro_scat
-    ! Allocated as (num_groups, num_cells)
-    double precision, dimension(:, :), allocatable :: &
+    ! Allocated as (num_groups, num_cells, num_materials)
+    double precision, dimension(:, :, :), allocatable :: &
         scat_source, fis_source, spont_source, tot_source
     ! Allocated as (num_groups, num_cells, num_materials)
     double precision, dimension(:, :, :), allocatable :: &
@@ -53,7 +53,7 @@ program steady_state_slab
     integer(8) :: &
         iterations
     integer :: &
-        i, c, g, g_prime, m, k, num_ind_cells
+        i, c, g, g_prime, m, k, num_ind_cells, material_num
     logical :: &
         cont_calc, point_found
     double precision :: &
@@ -134,19 +134,23 @@ program steady_state_slab
         psi_i_m(:, :, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
 
         ! Allocate and define initial source terms
-        allocate(scat_source(num_groups, num_ind_cells))
-        scat_source(:, :) = 0.0d+0  ! 1/cm^3-s
-        allocate(fis_source(num_groups, num_ind_cells))
-        fis_source(:, :) = 0.0d+0  ! 1/cm^3-s
-        allocate(spont_source(num_groups, num_ind_cells))
-        spont_source(:, :) = spont_source_const  ! 1/cm^3-s
-        allocate(tot_source(num_groups, num_ind_cells))
-        tot_source(:, :) = 0.0d+0  ! 1/cm^3-s
+        allocate(scat_source(num_groups, num_ind_cells, num_materials))
+        scat_source(:, :, :) = 0.0d+0  ! 1/cm^3-s
+        allocate(fis_source(num_groups, num_ind_cells, num_materials))
+        fis_source(:, :, :) = 0.0d+0  ! 1/cm^3-s
+        allocate(spont_source(num_groups, num_ind_cells, num_materials))
+        spont_source(:, :, :) = spont_source_const  ! 1/cm^3-s
+        allocate(tot_source(num_groups, num_ind_cells, num_materials))
+        tot_source(:, :, :) = 0.0d+0  ! 1/cm^3-s
 
         ! Allocate phi calculations
         allocate(phi_morph(num_groups, num_ind_cells))
         call struct_to_unstruct(phi_new, struct_thickness, num_cells, &
                                 phi_morph, delta_x, num_ind_cells)
+        allocate(phi_morph_1(num_groups, num_ind_cells))
+        phi_morph_1(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
+        allocate(phi_morph_2(num_groups, num_ind_cells))
+        phi_morph_2(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
 
         ! Determine sources for each cell and group
         do c = 1, num_ind_cells
@@ -159,15 +163,15 @@ program steady_state_slab
                     ! For generating sources, go until the point is found (mapping)
                     point_found = .false.
                     do g_prime = 1, num_groups
-                        scatter_into = scatter_into + macro_scat(g_prime, g, c) &
+                        scatter_into = scatter_into + macro_scat(g_prime, g, c, k) &
                                        * phi_morph(g_prime, c)
                         fission_into = fission_into + chi(g) * nu(g_prime) &
-                                       * macro_fis(g_prime, c) * phi_morph(g_prime, c)
+                                       * macro_fis(g_prime, c, k) * phi_morph(g_prime, c)
                     end do
-                    scat_source(g, c) = scatter_into
-                    fis_source(g, c) = fission_into
-                    tot_source(g, c) = scat_source(g, c) + fis_source(g, c) &
-                                       + spont_source(g, c)
+                    scat_source(g, c, k) = scatter_into
+                    fis_source(g, c, k) = fission_into
+                    tot_source(g, c, k) = scat_source(g, c, k) + fis_source(g, c, k) &
+                                       + spont_source(g, c, k)
                 end do
             end do
         end do
@@ -177,31 +181,33 @@ program steady_state_slab
         do g = 1, num_groups
             ! Ordinate loop, only consider the pos. ords for forward motion
             do m = (num_ords / 2 + 1), num_ords
+                material_num = materials(1)
                 ! Lewis and Miller Eq. 3-40
-                psi(g, 1, m) = (1.0d+0 + (macro_tot(g, 1) * delta_x(1)) &
+                psi(g, 1, m, material_num) = (1.0d+0 + (macro_tot(g, 1, material_num) * delta_x(1)) &
                                 / (2.0d+0 * dabs(mu(m))))**(-1) &
-                               * (psi_bound_l(g, m) + psi_refl_l(g, m) &
-                                  + (tot_source(g, 1) * delta_x(1)) &
+                               * (psi_bound_l(g, m, material_num) + psi_refl_l(g, m, material_num) &
+                                  + (tot_source(g, 1, material_num) * delta_x(1)) &
                                   / (2.d0 * dabs(mu(m))))
                 ! Lewis and Miller Eq. 3-41
-                psi_i_p(g, 1, m) = 2.0d+0 * psi(g, 1, m) - psi_bound_l(g, m) &
-                                   - psi_refl_l(g, m)
+                psi_i_p(g, 1, m, material_num) = 2.0d+0 * psi(g, 1, m, material_num) - psi_bound_l(g, m, material_num) &
+                                   - psi_refl_l(g, m, material_num)
             end do
         end do
         ! Rest of the cells (sans left bounding cell)
         do c = 2, num_ind_cells
             do g = 1, num_groups
                 do m = (num_ords / 2 + 1), num_ords
+                    material_num = materials(c)
                     ! Continuity of boundaries
-                    psi_i_m(g, c, m) = psi_i_p(g, c-1, m)
+                    psi_i_m(g, c, m, material_num) = psi_i_p(g, c-1, m, material_num)
                     ! Lewis and Miller Eq. 3-40
-                    psi(g, c, m) = (1.0d+0 + (macro_tot(g, c) * delta_x(c)) &
+                    psi(g, c, m, material_num) = (1.0d+0 + (macro_tot(g, c, material_num) * delta_x(c)) &
                                     / (2.0d+0 * dabs(mu(m))))**(-1) &
-                                   * (psi_i_m(g, c, m) + (tot_source(g, c) &
+                                   * (psi_i_m(g, c, m, material_num) + (tot_source(g, c, material_num) &
                                                           * delta_x(c)) &
                                       / (2.0d+0 * dabs(mu(m))))
                     ! Lewis and Miller Eq. 3-41
-                    psi_i_p(g, c, m) = 2.0d+0 * psi(g, c, m) - psi_i_m(g, c, m)
+                    psi_i_p(g, c, m, material_num) = 2.0d+0 * psi(g, c, m, material_num) - psi_i_m(g, c, m, material_num)
                 end do
             end do
         end do
@@ -211,35 +217,37 @@ program steady_state_slab
         do g = 1, num_groups
             ! Ordinate loop, only consider neg. ords for backwards motion
             do m = 1, (num_ords / 2)
+                material_num = materials(num_ind_cells)
                 ! Lewis and Miller Eq. 3-42
-                psi(g, num_ind_cells, m) = (1.0d+0 + (macro_tot(g, num_ind_cells) &
+                psi(g, num_ind_cells, m, material_num) = (1.0d+0 + (macro_tot(g, num_ind_cells, material_num) &
                                                 * delta_x(num_ind_cells)) &
                                         / (2.0d+0 * dabs(mu(m))))**(-1) &
-                                       * (psi_bound_r(g, m) &
-                                          + psi_refl_r(g, m) &
-                                          + (tot_source(g, num_ind_cells) &
+                                       * (psi_bound_r(g, m, material_num) &
+                                          + psi_refl_r(g, m, material_num) &
+                                          + (tot_source(g, num_ind_cells, material_num) &
                                              * delta_x(num_ind_cells)) &
                                           / (2.0d+0 * dabs(mu(m))))
                 ! Lewis and Miller Eq. 3-43
-                psi_i_m(g, num_ind_cells, m) = 2.0d+0 * psi(g, num_ind_cells, m) &
-                                           - psi_bound_r(g, m) &
-                                           - psi_refl_r(g, m)
+                psi_i_m(g, num_ind_cells, m, material_num) = 2.0d+0 * psi(g, num_ind_cells, m, material_num) &
+                                           - psi_bound_r(g, m, material_num) &
+                                           - psi_refl_r(g, m, material_num)
             end do
         end do
         ! Rest of the cells (sans right bounding cell)
         do c = (num_ind_cells - 1), 1, -1
             do g = 1, num_groups
                 do m = 1, (num_ords / 2)
+                    material_num = materials(c)
                     ! Continuation of boundaries
-                    psi_i_p(g, c, m) = psi_i_m(g, c+1, m)
+                    psi_i_p(g, c, m, material_num) = psi_i_m(g, c+1, m, material_num)
                     ! Lewis and Miller Eq. 3-42
-                    psi(g, c, m) = (1.0d+0 + (macro_tot(g, c) * delta_x(c)) &
+                    psi(g, c, m, material_num) = (1.0d+0 + (macro_tot(g, c, material_num) * delta_x(c)) &
                                     / (2.0d+0 * dabs(mu(m))))**(-1) &
-                                   * (psi_i_p(g, c, m) + (tot_source(g, c) &
+                                   * (psi_i_p(g, c, m, material_num) + (tot_source(g, c, material_num) &
                                                           * delta_x(c)) &
                                       / (2.0d+0 * dabs(mu(m))))
                     ! Lewis and Miller Eq. 3-43
-                    psi_i_m(g, c, m) = 2.0d+0 * psi(g, c, m) - psi_i_p(g, c, m)
+                    psi_i_m(g, c, m, material_num) = 2.0d+0 * psi(g, c, m, material_num) - psi_i_p(g, c, m, material_num)
                 end do
             end do
         end do
@@ -249,12 +257,12 @@ program steady_state_slab
             do m = 1, num_ords
                 if (m >= num_ords / 2 + 1) then
                     ! Last cell, pos. angular flux reflected to neg. direction
-                    psi_refl_r(g, num_ords-m+1) = alpha_r &
-                                                  * psi_i_p(g, num_cells, m)
+                    psi_refl_r(g, num_ords - m + 1, material_num) = alpha_r &
+                                                  * psi_i_p(g, num_cells, m, material_num)
                 else
                     ! First cell, neg. angular flux reflected to pos. direction
-                    psi_refl_l(g, num_ords-m+1) = alpha_l &
-                                                  * psi_i_m(g, 1, m)
+                    psi_refl_l(g, num_ords - m + 1, material_num) = alpha_l &
+                                                  * psi_i_m(g, 1, m, material_num)
                 end if
             end do
         end do
@@ -265,7 +273,7 @@ program steady_state_slab
             do g = 1, num_groups
                 weighted_sum = 0.0d+0
                 do m = 1, num_ords
-                    weighted_sum = weighted_sum + weights(m) * psi(g, c, m)
+                    weighted_sum = weighted_sum + weights(m) * psi(g, c, m, material_num)
                 end do
                 phi_morph(g, c) = 0.50d+0 * weighted_sum  ! 1/cm^2-s-MeV
             end do
@@ -296,6 +304,9 @@ program steady_state_slab
         deallocate(fis_source)
         deallocate(spont_source)
         deallocate(tot_source)
+        deallocate(phi_morph)
+        deallocate(phi_morph_1)
+        deallocate(phi_morph_2)
     end do
 
     ! Create plot
