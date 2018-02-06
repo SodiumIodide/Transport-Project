@@ -293,7 +293,7 @@ program steady_state_slab
             print *, "Quit after maximum ", iterations, " iterations"
         end if
 
-        ! Deallocations
+        ! Deallocations of variable-width unstructured arrays
         deallocate(macro_scat)
         deallocate(macro_fis)
         deallocate(macro_tot)

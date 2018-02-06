@@ -1,7 +1,12 @@
 module self_library
-    public :: legendre_gauss_quad, linspace, PI
+    private
+    public :: &
+        legendre_gauss_quad, &
+        linspace, &
+        PI
 
-    double precision, parameter :: PI = 4.d0 * datan(1.d0)
+    double precision, parameter :: &
+        PI = 4.d0 * datan(1.d0)
 
     contains
 
