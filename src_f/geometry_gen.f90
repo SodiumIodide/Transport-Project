@@ -18,17 +18,17 @@ module geometry_gen
 
         ! x_dist measures the delta_x values
         ! x_arr measures the overall distance
-        double precision, dimension(:), allocatable, intent(inout) :: &
+        real(8), dimension(:), allocatable, intent(inout) :: &
             x_dist, x_arr
         integer, dimension(:), allocatable, intent(inout) :: &
             materials
-        double precision, intent(in) :: &
+        real(8), intent(in) :: &
             chord_a, chord_b, thickness
         integer, intent(inout) :: &
             num_cells
         integer :: &
             material_num, i
-        double precision :: &
+        real(8) :: &
             cons_thickness, rand_num, distance, chord
         ! The total number of cells to utilize for each geometry segment
         integer, parameter :: &

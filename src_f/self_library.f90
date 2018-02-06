@@ -5,7 +5,7 @@ module self_library
         linspace, &
         PI
 
-    double precision, parameter :: &
+    real(8), parameter :: &
         PI = 4.d0 * datan(1.d0)
 
     contains
@@ -13,11 +13,11 @@ module self_library
     subroutine linspace(arr_x, x_start, x_fin, x_len)
         implicit none
 
-        double precision, dimension(:), intent(out) :: &
+        real(8), dimension(:), intent(out) :: &
             arr_x
-        double precision, intent(in) :: &
+        real(8), intent(in) :: &
             x_start, x_fin
-        double precision :: &
+        real(8) :: &
             delta_x
         integer :: &
             x_len, i
@@ -34,21 +34,21 @@ module self_library
         ! Inputs and outputs
         integer, intent(in) :: &
             order
-        double precision, intent(in) :: &
+        real(8), intent(in) :: &
             intv_a, intv_b
-        double precision, dimension(order), intent(out) :: &
+        real(8), dimension(order), intent(out) :: &
             values, weights
         ! Vector variables
-        double precision, dimension(order) :: &
+        real(8), dimension(order) :: &
             x_space, y_space, y_hold, prime
         ! Scalar variables
         integer :: &
             order_place, order_one, order_two, i
         ! Initial parameter for constant
-        double precision, parameter :: &
+        real(8), parameter :: &
             y_const = 2.d0
         ! Legendre-Gauss Vendermonde matrix and its derivative
-        double precision, dimension(order, order+1) :: &
+        real(8), dimension(order, order+1) :: &
             legendre
 
         ! Test for truncation order

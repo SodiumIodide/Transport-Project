@@ -15,7 +15,7 @@ program steady_state_slab
         num_materials = 2
 
     ! Material properties
-    double precision, parameter :: &
+    real(8), parameter :: &
         thickness = 1.0d+0, &  ! cm
         chord_a = 0.05d+0, &  ! cm
         chord_b = 0.05d+0, &  ! cm
@@ -25,28 +25,28 @@ program steady_state_slab
         spont_source_const = 0.0d+0  ! 1/cm^3
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
-    double precision, dimension(2), parameter :: &
+    real(8), dimension(2), parameter :: &
         scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
         fis_const = (/0.0d+0, 0.0d+0/), &  ! 1/cm
         tot_const = (/1.0d+0, 1.0d+0/)  ! 1/cm
 
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)
-    double precision, dimension(:), allocatable :: &
+    real(8), dimension(:), allocatable :: &
         delta_x, x_points
     ! Allocated as (num_ind_cells) (by subroutine)
     integer, dimension(:), allocatable :: &
         materials
     ! Allocated as (num_groups, num_groups, num_cells, num_materials)
-    double precision, dimension(:, :, :, :), allocatable :: &
+    real(8), dimension(:, :, :, :), allocatable :: &
         macro_scat
     ! Allocated as (num_groups, num_cells, num_materials)
-    double precision, dimension(:, :, :), allocatable :: &
+    real(8), dimension(:, :, :), allocatable :: &
         scat_source, fis_source, spont_source, tot_source
     ! Allocated as (num_groups, num_cells, num_materials)
-    double precision, dimension(:, :, :), allocatable :: &
+    real(8), dimension(:, :, :), allocatable :: &
         macro_fis, macro_tot
-    double precision, dimension(num_groups) :: &
+    real(8), dimension(num_groups) :: &
         chi, nu
 
     ! Calculation variables
@@ -56,25 +56,25 @@ program steady_state_slab
         i, c, g, g_prime, m, k, num_ind_cells, material_num
     logical :: &
         cont_calc, point_found
-    double precision :: &
+    real(8) :: &
         tolerance, scatter_into, fission_into, weighted_sum, err, cons_distance
-    double precision, dimension(num_groups, num_cells) :: &
+    real(8), dimension(num_groups, num_cells) :: &
         phi_new, phi_old
-    double precision, dimension(num_groups, num_cells, num_materials) :: &
+    real(8), dimension(num_groups, num_cells, num_materials) :: &
         phi_div
     ! Allocated as (num_groups, num_cells)
-    double precision, dimension(:, :), allocatable :: &
+    real(8), dimension(:, :), allocatable :: &
         phi_morph_1, phi_morph_2, phi_morph
     ! Allocated as (num_groups, num_cells, num_ords, num_materials)
-    double precision, dimension(:, :, :, :), allocatable :: &
+    real(8), dimension(:, :, :, :), allocatable :: &
         psi, psi_i_p, psi_i_m
-    double precision, dimension(num_groups, num_ords, num_materials) :: &
+    real(8), dimension(num_groups, num_ords, num_materials) :: &
         psi_bound_l, psi_bound_r, psi_refl_l, psi_refl_r
-    double precision, dimension(num_ords) :: &
+    real(8), dimension(num_ords) :: &
         ordinates, weights, mu
 
     ! Additional variables (plotting, etc.)
-    double precision, dimension(num_cells) :: &
+    real(8), dimension(num_cells) :: &
         cell_vector
 
     ! Assigment of material variables

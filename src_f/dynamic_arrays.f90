@@ -11,11 +11,11 @@ module dynamic_arrays
 
         integer :: &
             i, isize
-        double precision, intent(in) :: &
+        real(8), intent(in) :: &
             element
-        double precision, dimension(:), allocatable, intent(inout) :: &
+        real(8), dimension(:), allocatable, intent(inout) :: &
             list
-        double precision, dimension(:), allocatable :: &
+        real(8), dimension(:), allocatable :: &
             clist
         
         ! Match the size of the list

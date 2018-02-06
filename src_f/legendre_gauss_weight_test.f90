@@ -3,10 +3,10 @@ program legendre_gauss_weight
 
     implicit none
 
-    double precision, parameter :: intv_a = 1.d0
-    double precision, parameter :: intv_b = 2.d0
+    real(8), parameter :: intv_a = 1.d0
+    real(8), parameter :: intv_b = 2.d0
     integer, parameter :: order = 5
-    double precision, dimension(order) :: values, weights
+    real(8), dimension(order) :: values, weights
     integer :: i
     call legendre_gauss_quad(order, intv_a, intv_b, values, weights)
     print *, "Values:"

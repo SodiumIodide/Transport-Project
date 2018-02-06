@@ -5,11 +5,11 @@ program geometry_test
 
     implicit none
 
-    double precision, dimension(:), allocatable :: &
+    real(8), dimension(:), allocatable :: &
         x_dist, x_arr
     integer, dimension(:), allocatable :: &
         materials
-    double precision :: &
+    real(8) :: &
         thickness, chord_a, chord_b, cons_thickness, rand_num, distance
     integer :: &
         num_cells, i

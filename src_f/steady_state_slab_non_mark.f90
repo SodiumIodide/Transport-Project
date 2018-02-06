@@ -8,20 +8,20 @@ program steady_state_slab
         num_iter = 5000
     integer, parameter :: &
         num_ords = 16, &
-        num_cells = int(1e4)
+        num_cells = int(1e4, 4)
 
     ! Material properties
-    double precision, parameter :: &
+    real(8), parameter :: &
         scat_const = 0.2d+0, &  ! 1/cm
         tot_const = 1.0d+0, &  ! 1/cm
         thickness = 10.0d+0  ! cm
 
     ! Material parameters
-    double precision, dimension(num_cells) :: &
+    real(8), dimension(num_cells) :: &
         delta_x
-    double precision, dimension(num_cells) :: &
+    real(8), dimension(num_cells) :: &
         macro_scat
-    double precision, dimension(num_cells) :: &
+    real(8), dimension(num_cells) :: &
         macro_tot
 
     ! Calculation variables
@@ -31,22 +31,23 @@ program steady_state_slab
         i, c, m
     logical :: &
         cont_calc
-    double precision :: &
+    real(8) :: &
         tolerance, scatter_into, weighted_sum, err, total_abs, &
         leakage_l, leakage_r, balance_source_l, balance_source_r, source_dist, balance
-    double precision, dimension(num_cells) :: &
+    real(8), dimension(num_cells) :: &
         phi_new, phi_old, scat_source, spont_source, tot_source
-    double precision, dimension(num_cells, num_ords) :: &
+    real(8), dimension(num_cells, num_ords) :: &
         psi, psi_i_p, psi_i_m
-    double precision, dimension(num_ords) :: &
+    real(8), dimension(num_ords) :: &
         psi_bound_l, psi_bound_r
-    double precision, dimension(num_ords) :: &
+    real(8), dimension(num_ords) :: &
         ordinates, weights, mu
 
     ! Additional variables (plotting, etc.)
-    double precision, dimension(num_cells) :: &
+    real(8), dimension(num_cells) :: &
         cell_vector
-    double precision :: weight_sum
+    real(8) :: &
+        weight_sum
 
     ! Assigment of material parameters
     delta_x(:) = thickness / dble(num_cells)  ! cm

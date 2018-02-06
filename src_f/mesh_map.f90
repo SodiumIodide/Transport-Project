@@ -11,17 +11,17 @@ module mesh_map
 
         integer, intent(in) :: &
             struct_size, unstruct_size
-        double precision, dimension(:), allocatable, intent(in) :: &
+        real(8), dimension(:), allocatable, intent(in) :: &
             unstruct_delta
-        double precision, dimension(struct_size), intent(in) :: &
+        real(8), dimension(struct_size), intent(in) :: &
             struct
-        double precision, dimension(:, :), allocatable, intent(inout) :: &
+        real(8), dimension(:, :), allocatable, intent(inout) :: &
             unstruct
-        double precision, intent(in) :: &
+        real(8), intent(in) :: &
             struct_delta
         integer :: &
             i, counter
-        double precision :: &
+        real(8) :: &
             distance_tally, unstruct_distance_tally, struct_distance_tally, weight_tally, delta, leftover_distance
         logical :: &
             distance_overlap
@@ -92,17 +92,17 @@ module mesh_map
 
         integer, intent(in) :: &
             struct_size
-        double precision, dimension(:), allocatable, intent(in) :: &
+        real(8), dimension(:), allocatable, intent(in) :: &
             unstruct_delta
-        double precision, dimension(:, :), allocatable, intent(in) :: &
+        real(8), dimension(:, :), allocatable, intent(in) :: &
             unstruct
-        double precision, dimension(struct_size), intent(inout) :: &
+        real(8), dimension(struct_size), intent(inout) :: &
             struct
-        double precision, intent(in) :: &
+        real(8), intent(in) :: &
             struct_delta
         integer :: &
             i, counter
-        double precision :: &
+        real(8) :: &
             distance_tally, unstruct_distance_tally, struct_distance_tally, weight_tally, delta, leftover_distance
         logical :: &
             distance_overlap
