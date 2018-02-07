@@ -30,7 +30,10 @@ program steady_state_slab
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)
     real(8), dimension(:), allocatable :: &
-        delta_x, x_points, materials
+        delta_x, x_points
+    ! Allocated as (num_ind_cells) (by subroutine)
+    integer, dimension(:), allocatable :: &
+        materials
     ! Allocated as (num_ind_cells, num_materials)
     real(8), dimension(:, :), allocatable :: &
         macro_scat, macro_tot, scat_source, fis_source, spont_source, tot_source, phi_div
