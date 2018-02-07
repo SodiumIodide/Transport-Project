@@ -12,7 +12,7 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 10.0d+0, &  ! cm
+        thickness = 1.0d+0, &  ! cm
         scat_const = 0.2d+0, &  ! 1/cm
         tot_const = 1.0d+0  ! 1/cm
 
@@ -57,8 +57,14 @@ program steady_state_slab
 
     ! Legendre Gauss Quadrature values
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
+    !call gauleg(-1.0d+0, 1.0d+0, ordinates, weights, num_ords)
+    !mu = ordinates
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
+
+    do i = 1, num_ords
+        print *, mu(i), weights(i)
+    end do
 
     ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
@@ -94,13 +100,11 @@ program steady_state_slab
         ! First cell (left boundary)
         ! Ordinate loop, only consider the pos. ords for forward motion
         do m = (num_ords / 2 + 1), num_ords
-            ! Lewis and Miller Eq. 3-40
             psi(1, m) = (1.0d+0 + (macro_tot(1) * delta_x(1)) &
                          / (2.0d+0 * dabs(mu(m))))**(-1) &
                         * (psi_bound_l(m) &
                            + (tot_source(1) * delta_x(1)) &
                              / (2.0d+0 * dabs(mu(m))))
-            ! Lewis and Miller Eq. 3-41
             psi_i_p(1, m) = 2.0d+0 * psi(1, m) - psi_bound_l(m)
         end do
         ! Rest of the cells (sans left bounding cell)
@@ -108,13 +112,11 @@ program steady_state_slab
             do m = (num_ords / 2 + 1), num_ords
                 ! Continuity of boundaries
                 psi_i_m(c, m) = psi_i_p(c - 1, m)
-                ! Lewis and Miller Eq. 3-40
                 psi(c, m) = (1.0d+0 + (macro_tot(c) * delta_x(c)) &
                              / (2.0d+0 * dabs(mu(m))))**(-1) &
                             * (psi_i_m(c, m) &
                                + (tot_source(c) * delta_x(c)) &
                                  / (2.0d+0 * dabs(mu(m))))
-                ! Lewis and Miller Eq. 3-41
                 psi_i_p(c, m) = 2.0d+0 * psi(c, m) - psi_i_m(c, m)
             end do
         end do
@@ -137,19 +139,16 @@ program steady_state_slab
             do m = 1, (num_ords / 2)
                 ! Continuation of boundaries
                 psi_i_p(c, m) = psi_i_m(c + 1, m)
-                ! Lewis and Miller Eq. 3-42
                 psi(c, m) = (1.0d+0 + (macro_tot(c) * delta_x(c)) &
                              / (2.0d+0 * dabs(mu(m))))**(-1) &
                             * (psi_i_p(c, m) + (tot_source(c) &
                                                 * delta_x(c)) &
                                / (2.0d+0 * dabs(mu(m))))
-                ! Lewis and Miller Eq. 3-43
                 psi_i_m(c, m) = 2.0d+0 * psi(c, m) - psi_i_p(c, m)
             end do
         end do
 
         ! Calculate phi from psi
-        ! Lewis and Miller Eq. 3-5
         do c = 1, num_cells
             weighted_sum = 0.0d+0
             do m = 1, num_ords
@@ -189,12 +188,12 @@ program steady_state_slab
         ! Leakage in neg. direction from left face
         if (c == 1) then
             do m = 1, (num_ords / 2)
-                leakage_l = leakage_l + dabs(mu(m)) * weights(m) * psi(c, m)
+                leakage_l = leakage_l + dabs(mu(m)) * weights(m) * psi_i_m(c, m)
             end do
         ! Leakage in pos. direction from right face
         else if (c == num_cells) then
             do m = (num_ords / 2 + 1), num_ords
-                leakage_r = leakage_r + dabs(mu(m)) * weights(m) * psi(c, m)
+                leakage_r = leakage_r + dabs(mu(m)) * weights(m) * psi_i_p(c, m)
             end do
         end if
         ! Total absorption in system
@@ -202,6 +201,12 @@ program steady_state_slab
         ! Distributed source
         source_dist = source_dist + spont_source(c) * delta_x(c)
     end do
+    print *, "Leakage left: ", leakage_l
+    print *, "Leakage right: ", leakage_r
+    print *, "Source left: ", balance_source_l
+    print *, "Source right: ", balance_source_r
+    print *, "Distributed source: ", source_dist
+    print *, "Absorption loss: ", total_abs
     print *, "Source is ", balance_source_l + balance_source_r + source_dist
     print *, "Loss is ", leakage_l + leakage_r + total_abs
     balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs

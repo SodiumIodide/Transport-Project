@@ -8,7 +8,8 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter = int(5000, 8)
+        num_iter_outer = int(5000, 8), &
+        num_iter_inner = int(5000, 8)
     integer, parameter :: &
         num_cells = int(100, 4), &
         num_ords = int(16, 4), &
@@ -82,7 +83,8 @@ program steady_state_slab
     num_ind_cells = 0
 
     ! Legendre Gauss Quadrature values over chosen ordinates
-    call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
+    !call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
+    call gauleg(-1.0d+0, 1.0d+0, ordinates, weights, num_ords)
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
 
@@ -124,6 +126,7 @@ program steady_state_slab
                           thickness, num_ind_cells)
 
         ! Allocate and define properties
+        ! Anything that depends on the number of individual cells must be reallocated
         allocate(macro_scat(num_ind_cells, num_materials))
         allocate(macro_tot(num_ind_cells, num_materials))
         do k = 1, num_materials
@@ -245,7 +248,7 @@ program steady_state_slab
             err_inner = maxval(dabs((phi_morph_old - phi_morph_new)) / phi_morph_new)
             if (err_inner <= tolerance) then
                 cont_calc_inner = .false.
-            else if (iterations_inner > num_iter) then
+            else if (iterations_inner > num_iter_inner) then
                 cont_calc_inner = .false.
                 print *, "No convergence on inner loop number ", iterations_outer, &
                          ": quit after maximum ", iterations_inner, " iterations"
@@ -267,7 +270,7 @@ program steady_state_slab
         if (err_outer <= tolerance) then
             cont_calc_outer = .false.
             print *, "Quit after ", iterations_outer , " outer iterations"
-        else if (iterations_outer > num_iter) then
+        else if (iterations_outer > num_iter_outer) then
             cont_calc_outer = .false.
             print *, "No convergence on outer loop: quit after maximum ", iterations_outer, " outer iterations"
         end if

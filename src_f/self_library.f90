@@ -3,10 +3,11 @@ module self_library
     public :: &
         legendre_gauss_quad, &
         linspace, &
+        gauleg, &
         PI
 
     real(8), parameter :: &
-        PI = 4.d0 * datan(1.d0)
+        PI = 4.d0 * datan(1.0d+0)
 
     contains
 
@@ -24,7 +25,7 @@ module self_library
 
         delta_x = (x_fin - x_start) / (x_len - 1)
         arr_x(1:x_len) = [(x_start + (i - 1) * delta_x, i = 1, x_len)]
-    end subroutine
+    end subroutine linspace
 
     subroutine legendre_gauss_quad(order, intv_a, intv_b, values, weights)
         implicit none
@@ -48,7 +49,7 @@ module self_library
         real(8), parameter :: &
             y_const = 2.d0
         ! Legendre-Gauss Vendermonde matrix and its derivative
-        real(8), dimension(order, order+1) :: &
+        real(8), dimension(order, order + 1) :: &
             legendre
 
         ! Test for truncation order
@@ -63,49 +64,41 @@ module self_library
         order_two = order_place + 2
 
         ! Assign the arrays
-        call linspace(x_space, -1.d0, 1.d0, order_one)
-        do i = 0,order_place
-            y_space(i+1) = dcos((2.d0*i + 1.d0)/(2.d0*order_place + 2.d0)*PI)+&
-                     (0.27d0/order_one)*dsin((PI*x_space(i+1)*order_place)/&
+        call linspace(x_space, -1.0d+0, 1.0d+0, order_one)
+        do i = 0, order_place
+            y_space(i + 1) = dcos((2.0d+0 * i + 1.0d+0) / (2.0d+0 * order_place + 2.0d+0) * PI) + &
+                     (0.27d+0 / order_one) * dsin((PI * x_space(i + 1) * order_place) / &
                                              order_two)
         end do
-        legendre(:,:) = 0.d0
+        legendre(:, :) = 0.0d+0
 
         ! Compute the zeros of the N+1 Legendre Polynomial using the recursion
         ! relation and the Newton-Raphson method
         y_hold(:) = y_const
         do while (maxval(dabs(y_space - y_hold)) > epsilon(y_const))
             ! First Legendre Polynomial
-            legendre(:,1) = 1.d0
-
+            legendre(:, 1) = 1.0d+0
             ! Second Legendre Polynomial
-            if (order_one > 1) then
-                legendre(:,2) = y_space
-            end if
+            legendre(:, 2) = y_space
 
-            ! Derivative calculations (only necessary for uppermost order derivative)
-            if (order_one == 1) then
-                prime(:) = 0.d0
-            else if (order_one == 2) then
-                prime(:) = 1.d0
-            else
-                ! Remaining Legendre Polynomials
-                do i = 2,order_one
-                    legendre(:,i+1) = ((2.d0*i - 1.d0)*y_space*legendre(:,i)-&
-                                       (i-1.d0)*legendre(:,i-1))/i
-                end do
-                prime = order_two*(legendre(:,order_one)-&
-                                   y_space*legendre(:,order_two))/(1-y_space**2)
-            end if
+            do i = 2, order_one
+                legendre(:, i + 1) = ((2.0d+0 * i - 1.0d+0) * y_space * legendre(:, i) &
+                                      - (i - 1.0d+0) * legendre(:, i - 1)) / dble(i)
+            end do
+            
+            ! Derivative of the Legendre polynomial
+            prime = order_two * (legendre(:, order_one) - &
+                                 y_space * legendre(:, order_two)) / (1 - y_space**2)
+
             y_hold = y_space
-            y_space(:) = y_hold - legendre(:,order_two) / prime
+            y_space(:) = y_hold - legendre(:, order_two) / prime
         end do
 
         ! Linear map from [-1, 1] to [intv_a, intv_b]
-        values = intv_a * (1.d0 - y_space)/2.d0 + intv_b*(1.d0 + y_space)/2.d0
+        values = intv_a * (1.0d+0 - y_space) / 2.0d+0 + intv_b * (1.0d+0 + y_space) / 2.0d+0
 
         ! Compute the weights
-        weights = dble(intv_b - intv_a) / ((1.d0-y_space**2)*prime**2) * &
-                  (dble(order_two)/dble(order_one))**2
-    end subroutine
-end module
+        weights = dble(intv_b - intv_a) / ((1.0d+0 - y_space**2) * prime**2) * &
+                  (dble(order_two) / dble(order_one))**2
+    end subroutine legendre_gauss_quad
+end module self_library
