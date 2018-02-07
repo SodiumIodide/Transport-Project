@@ -163,4 +163,29 @@ module mesh_map
             struct(i) = weight_tally / struct_delta  ! unit
         end do
     end subroutine unstruct_to_struct
+
+!    subroutine material_calc(phi_mat, struct_size, phi_morph, materials, unstruct_size, num_materials)
+!        implicit none
+
+!        integer, intent(in) :: &
+!            struct_size, unstruct_size, num_materials
+!        real(8), dimension(:), allocatable, intent(in) :: &
+!            phi_morph
+!        integer, dimension(:), allocatable, intent(in) :: &
+!            materials
+!        real(8), dimension(struct_size, num_materials), intent(inout) :: &
+!            phi_mat
+
+!        integer :: &
+!            i, counter
+!        real(8) :: &
+!            distance_tally, unstruct_distance_tally, struct_distance_tally, weight_tally, delta, leftover_distance
+!        logical :: &
+!            distance_overlap
+
+!        do i = 1, struct_size
+!            distance_overlap = .false.
+!            weight_tally = 0.0d+0  ! unit*cm
+!        end do
+!    end subroutine material_calc
 end module mesh_map

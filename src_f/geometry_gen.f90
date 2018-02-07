@@ -8,8 +8,6 @@ module geometry_gen
 
     integer :: &
         num_materials = 2
-    integer :: &
-        init_material = 1
 
     contains
 
@@ -29,14 +27,22 @@ module geometry_gen
         integer :: &
             material_num, i
         real(8) :: &
-            cons_thickness, rand_num, distance, chord
+            cons_thickness, rand_num, distance, chord, prob_a
         ! The total number of cells to utilize for each geometry segment
         integer, parameter :: &
             num_divs = 10
 
+        ! Determine first material to use
+        prob_a = chord_a / (chord_a + chord_b)
+        rand_num = rang()
+        if (rand_num < prob_a) then
+            material_num = 1
+        else
+            material_num = 2
+        end if
+
         ! Updateable values
         cons_thickness = 0.0d+0  ! cm
-        material_num = init_material
         distance = 0.0d+0  ! cm
 
         ! Checks and (de)allocations
@@ -66,12 +72,13 @@ module geometry_gen
         !materials(1) = material_num
 
         ! Overwrite counter variable (first cell starts at 0.0)
-        if (num_cells /= 1) then
-            num_cells = 1
-        end if
+        !if (num_cells /= 1) then
+        !    num_cells = 1
+        !end if
 
-        ! Start random generation seed
-        call RN_init_problem(int(12345678, 8), 1)
+        if (num_cells > 0) then
+            num_cells = 0
+        end if
 
         ! Assign geometry via Markovian generation
         do while (cons_thickness < thickness)
@@ -111,10 +118,10 @@ module geometry_gen
             end do
 
             ! Update material number
-            if (material_num == init_material) then
-                material_num = num_materials
+            if (material_num == 1) then
+                material_num = 2
             else
-                material_num = init_material
+                material_num = 1
             end if
 
             ! Push results onto arrays

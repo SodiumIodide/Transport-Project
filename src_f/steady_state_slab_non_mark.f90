@@ -28,7 +28,7 @@ program steady_state_slab
     logical :: &
         cont_calc
     real(8) :: &
-        tolerance, scatter_into, weighted_sum, err, total_abs, &
+        tolerance, weighted_sum, err, total_abs, &
         leakage_l, leakage_r, balance_source_l, balance_source_r, source_dist, balance
     real(8), dimension(num_cells) :: &
         phi_new, phi_old, scat_source, spont_source, tot_source
@@ -86,8 +86,7 @@ program steady_state_slab
         ! Determine sources for each cell and group
         do c = 1, num_cells
             ! Scatter into, one-group scattering
-            scatter_into = macro_scat(c) / 2.0d+0 * phi_new(c)
-            scat_source(c) = scatter_into
+            scat_source(c) = macro_scat(c) / 2.0d+0 * phi_new(c)
             tot_source(c) = scat_source(c) + spont_source(c) / 2.0d+0
         end do
 

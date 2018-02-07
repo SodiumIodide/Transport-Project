@@ -13,7 +13,7 @@ my @FILES = qw/
     dynamic_arrays.f90
     geometry_gen.f90
     mesh_map.f90
-    steady_state_slab_non_mark.f90
+    steady_state_slab.f90
 /;
 my $EXEC_NAME = "steady_state_slab.exe";
 
