@@ -17,4 +17,4 @@ program legendre_gauss_weight
     do i = 1,order
         print *, weights(i)
     end do
-end program
+end program legendre_gauss_weight

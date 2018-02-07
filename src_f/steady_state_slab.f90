@@ -296,4 +296,4 @@ program steady_state_slab
         write(7,*) cell_vector(i), phi_new_outer(i)
     end do
     close(7)
-end program
+end program steady_state_slab

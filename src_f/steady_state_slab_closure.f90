@@ -1,4 +1,4 @@
-program steady_state_slab_non_mark
+program steady_state_slab_closure
     use self_library
 
     implicit none
@@ -220,4 +220,4 @@ program steady_state_slab_non_mark
         write(7,*) cell_vector(i), phi_new(i)
     end do
     close(7)
-end program steady_state_slab_non_mark
+end program steady_state_slab_closure
