@@ -15,7 +15,7 @@ module mesh_map
             unstruct_delta
         real(8), dimension(struct_size), intent(in) :: &
             struct
-        real(8), dimension(:, :), allocatable, intent(inout) :: &
+        real(8), dimension(:), allocatable, intent(inout) :: &
             unstruct
         real(8), intent(in) :: &
             struct_delta
@@ -38,7 +38,7 @@ module mesh_map
         if (allocated(unstruct)) then
             deallocate(unstruct)
         end if
-        allocate(unstruct(1, unstruct_size))
+        allocate(unstruct(unstruct_size))
 
         ! Loop for mapping the structured to the unstructured mesh
         do i = 1, unstruct_size
@@ -83,7 +83,7 @@ module mesh_map
                     counter = counter - 1
                 end if
             end do
-            unstruct(1, i) = weight_tally / unstruct_delta(i)  ! unit
+            unstruct(i) = weight_tally / unstruct_delta(i)  ! unit
         end do
     end subroutine struct_to_unstruct
 
@@ -94,7 +94,7 @@ module mesh_map
             struct_size
         real(8), dimension(:), allocatable, intent(in) :: &
             unstruct_delta
-        real(8), dimension(:, :), allocatable, intent(in) :: &
+        real(8), dimension(:), allocatable, intent(in) :: &
             unstruct
         real(8), dimension(struct_size), intent(inout) :: &
             struct
@@ -128,7 +128,7 @@ module mesh_map
 
             ! Carry over leftover distance
             if (leftover_distance /= 0.0d+0) then
-                weight_tally = weight_tally + leftover_distance * unstruct(1, counter)  ! unit*cm
+                weight_tally = weight_tally + leftover_distance * unstruct(counter)  ! unit*cm
                 distance_tally = distance_tally + leftover_distance  ! cm
                 leftover_distance = 0.0d+0  ! cm
             end if
@@ -153,7 +153,7 @@ module mesh_map
                 distance_tally = distance_tally + delta  ! cm
 
                 ! Apply linear weighted tally
-                weight_tally = weight_tally + delta * unstruct(1, counter)  ! unit*cm
+                weight_tally = weight_tally + delta * unstruct(counter)  ! unit*cm
 
                 ! Reset counter to use leftover distance and re-use value
                 if (distance_overlap) then

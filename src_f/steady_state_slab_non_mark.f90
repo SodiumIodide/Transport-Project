@@ -12,17 +12,13 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
+        thickness = 10.0d+0, &  ! cm
         scat_const = 0.2d+0, &  ! 1/cm
-        tot_const = 1.0d+0, &  ! 1/cm
-        thickness = 10.0d+0  ! cm
+        tot_const = 1.0d+0  ! 1/cm
 
     ! Material parameters
     real(8), dimension(num_cells) :: &
-        delta_x
-    real(8), dimension(num_cells) :: &
-        macro_scat
-    real(8), dimension(num_cells) :: &
-        macro_tot
+        delta_x, macro_scat, macro_tot
 
     ! Calculation variables
     integer(8) :: &
@@ -39,15 +35,11 @@ program steady_state_slab
     real(8), dimension(num_cells, num_ords) :: &
         psi, psi_i_p, psi_i_m
     real(8), dimension(num_ords) :: &
-        psi_bound_l, psi_bound_r
-    real(8), dimension(num_ords) :: &
-        ordinates, weights, mu
+        ordinates, weights, mu, psi_bound_l, psi_bound_r
 
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
         cell_vector
-    real(8) :: &
-        weight_sum
 
     ! Assigment of material parameters
     delta_x(:) = thickness / dble(num_cells)  ! cm
@@ -67,12 +59,6 @@ program steady_state_slab
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
-
-    weight_sum = 0.0d+0
-    do m = 1, num_ords
-        weight_sum = weight_sum + weights(m)
-    end do
-    print *, "Sum of weights: " , weight_sum
 
     ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
@@ -96,6 +82,7 @@ program steady_state_slab
     iterations = int(0, 8)
     do while (cont_calc)
         phi_old = phi_new  ! 1/cm^2-s-MeV
+
         ! Determine sources for each cell and group
         do c = 1, num_cells
             ! Scatter into, one-group scattering
