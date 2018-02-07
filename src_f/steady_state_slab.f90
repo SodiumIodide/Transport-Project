@@ -21,7 +21,7 @@ program steady_state_slab
         struct_thickness = thickness / dble(num_cells)  ! cm
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
-    real(8), dimension(2), parameter :: &
+    real(8), dimension(num_materials), parameter :: &
         scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
         fis_const = (/0.0d+0, 0.0d+0/), &  ! 1/cm
         tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
@@ -30,11 +30,8 @@ program steady_state_slab
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)
     real(8), dimension(:), allocatable :: &
-        delta_x, x_points
-    ! Allocated as (num_ind_cells) (by subroutine)
-    integer, dimension(:), allocatable :: &
-        materials
-    ! Allocated as (num_cells, num_materials)
+        delta_x, x_points, materials
+    ! Allocated as (num_ind_cells, num_materials)
     real(8), dimension(:, :), allocatable :: &
         macro_scat, macro_tot, scat_source, fis_source, spont_source, tot_source, phi_div
 
@@ -49,16 +46,14 @@ program steady_state_slab
         tolerance, scatter_into, weighted_sum, err, cons_distance
     real(8), dimension(num_cells) :: &
         phi_new, phi_old
-    ! Allocated as (num_cells)
+    ! Allocated as (num_ind_cells)
     real(8), dimension(:), allocatable :: &
         phi_morph_1, phi_morph_2, phi_morph
-    ! Allocated as (num_cells, num_ords, num_materials)
+    ! Allocated as (num_ind_cells, num_ords, num_materials)
     real(8), dimension(:, :, :), allocatable :: &
         psi, psi_i_p, psi_i_m
     real(8), dimension(num_ords) :: &
-        psi_bound_l, psi_bound_r
-    real(8), dimension(num_ords) :: &
-        ordinates, weights, mu
+        ordinates, weights, mu, psi_bound_l, psi_bound_r
 
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
