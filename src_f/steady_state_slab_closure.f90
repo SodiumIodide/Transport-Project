@@ -5,35 +5,49 @@ program steady_state_slab_closure
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter = 5000
+        num_iter_inner = 5000, &
+        num_iter_outer = 5000
     integer, parameter :: &
         num_ords = 16, &
-        num_cells = int(1e4, 4)
+        num_cells = int(1e4, 4), &
+        num_materials = 2
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 1.0d+0, &  ! cm
-        scat_const = 0.2d+0, &  ! 1/cm
-        tot_const = 1.0d+0  ! 1/cm
+        thickness = 1.0d+0  ! cm
+
+    ! Individual material properties
+    real(8), dimension(num_materials), parameter :: &
+        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
+        tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
+        chord = (/0.5, 0.4/)  ! cm
+    real(8), dimension(num_materials) :: &
+        prob
 
     ! Material parameters
     real(8), dimension(num_cells) :: &
-        delta_x, macro_scat, macro_tot
+        delta_x
+    real(8), dimension(num_cells, num_materials) :: &
+        macro_scat, macro_tot
 
     ! Calculation variables
     integer(8) :: &
-        iterations
+        iterations_inner, iterations_outer
     integer :: &
-        i, c, m
+        i, c, m, k, material_num, material_off_num
     logical :: &
-        cont_calc
+        cont_calc_inner, cont_calc_outer
     real(8) :: &
-        tolerance, weighted_sum, err, total_abs, &
+        tolerance, weighted_sum, err, total_abs, total_chord, &
         leakage_l, leakage_r, balance_source_l, balance_source_r, source_dist, balance
     real(8), dimension(num_cells) :: &
-        phi_new, phi_old, scat_source, spont_source, tot_source
-    real(8), dimension(num_cells, num_ords) :: &
+        phi_new_outer, phi_old_outer, scat_source, tot_source
+    real(8), dimension(num_cells, num_materials) :: &
+        phi_new_inner, phi_old_inner, spont_source
+    real(8), dimension(num_cells, num_ords, num_materials) :: &
         psi, psi_i_p, psi_i_m
+    real(8), dimension(num_cells, num_ords) :: &
+        psi_overall
     real(8), dimension(num_ords) :: &
         ordinates, weights, mu, psi_bound_l, psi_bound_r
 
@@ -44,27 +58,27 @@ program steady_state_slab_closure
     ! Assigment of material parameters
     delta_x(:) = thickness / dble(num_cells)  ! cm
     ! Assignment of initial calculation variables
-    phi_new(:) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
-    phi_old(:) = 0.0d+0  ! 1/cm^2-s-MeV
-    psi(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad, angular neutron flux
-    psi_i_p(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
-    psi_i_m(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    phi_new_outer(:) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
+    phi_old_outer(:) = 0.0d+0  ! 1/cm^2-s-MeV
+    psi(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad, angular neutron flux
+    psi_i_p(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_i_m(:, :, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
     scat_source(:) = 0.0d+0  ! 1/cm^3-s
-    spont_source(:) = 0.0d+0  ! 1/cm^3-s
     tot_source(:) = 0.0d+0  ! 1/cm^3-s
-    macro_scat(:) = scat_const  ! 1/cm
-    macro_tot(:) = tot_const  ! 1/cm
+    total_chord = 0.0d+0  ! cm
+    psi_overall(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    do k = 1, num_materials
+        macro_scat(:, k) = scat_const(k)  ! 1/cm
+        macro_tot(:, k) = tot_const(k)  ! 1/cm
+        spont_source(:, k) = 0.0d+0  ! 1/cm^3-s
+        total_chord = total_chord + chord(k)  ! cm
+    end do
+    prob(:) = chord(:) / total_chord
 
     ! Legendre Gauss Quadrature values
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
-    !call gauleg(-1.0d+0, 1.0d+0, ordinates, weights, num_ords)
-    !mu = ordinates
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
-
-    do i = 1, num_ords
-        print *, mu(i), weights(i)
-    end do
 
     ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
@@ -82,142 +96,194 @@ program steady_state_slab_closure
     ! Tolerance for ending calculation
     tolerance = epsilon(1.0d+0)
 
+    ! Initial material number
+    material_num = 1
+    material_off_num = 2
+
     ! Calculation: iterations
-    cont_calc = .true.
+    cont_calc_outer = .true.
     ! Start counter at zero
-    iterations = int(0, 8)
-    do while (cont_calc)
-        phi_old = phi_new  ! 1/cm^2-s-MeV
+    iterations_outer = int(0, 8)
+    do while (cont_calc_outer)
+        phi_old_outer = phi_new_outer  ! 1/cm^2-s-MeV
 
-        ! Determine sources for each cell and group
-        do c = 1, num_cells
-            ! Scatter into, one-group scattering
-            scat_source(c) = macro_scat(c) / 2.0d+0 * phi_new(c)
-            tot_source(c) = scat_source(c) + spont_source(c) / 2.0d+0
-        end do
+        ! Switch value of two variables
+        material_num = material_num + material_off_num
+        material_off_num = material_num - material_off_num
+        material_num = material_num - material_off_num
 
-        ! Forward sweep (left to right)
-        ! First cell (left boundary)
-        ! Ordinate loop, only consider the pos. ords for forward motion
-        do m = (num_ords / 2 + 1), num_ords
-            psi(1, m) = (1.0d+0 + (macro_tot(1) * delta_x(1)) &
-                         / (2.0d+0 * dabs(mu(m))))**(-1) &
-                        * (psi_bound_l(m) &
-                           + (tot_source(1) * delta_x(1)) &
-                             / (2.0d+0 * dabs(mu(m))))
-            psi_i_p(1, m) = 2.0d+0 * psi(1, m) - psi_bound_l(m)
-        end do
-        ! Rest of the cells (sans left bounding cell)
-        do c = 2, num_cells
+        phi_new_inner(:, :) = 1.0d+0  ! 1/cm^2-s-MeV
+        phi_old_inner(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
+
+        iterations_inner = int(0, 8)
+        do while (cont_calc_inner)
+            phi_old_inner = phi_new_inner  ! 1/cm^2-s-MeV
+
+            ! Determine sources for each cell and group
+            do c = 1, num_cells
+                ! Scatter into, one-group scattering
+                scat_source(c) = macro_scat(c, material_num) / 2.0d+0 * phi_new_inner(c, material_num)
+                tot_source(c) = scat_source(c) + spont_source(c, material_num) / 2.0d+0
+            end do
+
+            ! Forward sweep (left to right)
+            ! First cell (left boundary)
+            ! Ordinate loop, only consider the pos. ords for forward motion
             do m = (num_ords / 2 + 1), num_ords
-                ! Continuity of boundaries
-                psi_i_m(c, m) = psi_i_p(c - 1, m)
-                psi(c, m) = (1.0d+0 + (macro_tot(c) * delta_x(c)) &
-                             / (2.0d+0 * dabs(mu(m))))**(-1) &
-                            * (psi_i_m(c, m) &
-                               + (tot_source(c) * delta_x(c)) &
-                                 / (2.0d+0 * dabs(mu(m))))
-                psi_i_p(c, m) = 2.0d+0 * psi(c, m) - psi_i_m(c, m)
+                psi(1, m, material_num) = (1.0d+0 + (macro_tot(1, material_num) * delta_x(1)) &
+                    / (2.0d+0 * dabs(mu(m))) - delta_x(1) &
+                    / (2.0d+0 * dabs(mu(m)) * chord(material_off_num)))**(-1) &
+                    * (psi_bound_l(m) + (tot_source(1) * delta_x(1)) &
+                    / (2.0d+0 * dabs(mu(m))) &
+                    + (delta_x(1) * prob(material_num) * psi(1, m, material_off_num)) &
+                    / (2.0d+0 * prob(material_off_num) * chord(material_num)))
+                psi_i_p(1, m, material_num) = 2.0d+0 * psi(1, m, material_num) - psi_bound_l(m)
             end do
-        end do
+            ! Rest of the cells (sans left bounding cell)
+            do c = 2, num_cells
+                do m = (num_ords / 2 + 1), num_ords
+                    ! Continuity of boundaries
+                    psi_i_m(c, m, material_num) = psi_i_p(c - 1, m, material_num)
+                    psi(c, m, material_num) = (1.0d+0 + (macro_tot(c, material_num) * delta_x(c)) &
+                        / (2.0d+0 * dabs(mu(m))) - delta_x(c) &
+                        / (2.0d+0 * dabs(mu(m)) * chord(material_num)))**(-1) &
+                        * (psi_i_m(c, m, material_num) + (tot_source(c) * delta_x(c)) &
+                        / (2.0d+0 * dabs(mu(m))) &
+                        + (delta_x(c) * prob(material_num) * psi(c, m, material_off_num)) &
+                        / (2.0d+0 * prob(material_off_num) * chord(material_num)))
+                    psi_i_p(c, m, material_num) = 2.0d+0 * psi(c, m, material_num) - psi_i_m(c, m, material_num)
+                end do
+            end do
 
-        ! Backward sweep (right to left)
-        ! First cell (right boundary)
-        ! Ordinate loop, only consider neg. ords for backwards motion
-        do m = 1, (num_ords / 2)
-            ! Lewis and Miller Eq. 3-42
-            psi(num_cells, m) = (1.0d+0 + (macro_tot(num_cells) * delta_x(num_cells)) &
-                                 / (2.0d+0 * dabs(mu(m))))**(-1) &
-                                * (psi_bound_r(m) + (tot_source(num_cells) &
-                                                     * delta_x(num_cells)) &
-                                   / (2.0d+0 * dabs(mu(m))))
-            ! Lewis and Miller Eq. 3-43
-            psi_i_m(num_cells, m) = 2.0d+0 * psi(num_cells, m) - psi_bound_r(m)
-        end do
-        ! Rest of the cells (sans right bounding cell)
-        do c = (num_cells - 1), 1, -1
+            ! Backward sweep (right to left)
+            ! First cell (right boundary)
+            ! Ordinate loop, only consider neg. ords for backwards motion
             do m = 1, (num_ords / 2)
-                ! Continuation of boundaries
-                psi_i_p(c, m) = psi_i_m(c + 1, m)
-                psi(c, m) = (1.0d+0 + (macro_tot(c) * delta_x(c)) &
-                             / (2.0d+0 * dabs(mu(m))))**(-1) &
-                            * (psi_i_p(c, m) + (tot_source(c) &
-                                                * delta_x(c)) &
-                               / (2.0d+0 * dabs(mu(m))))
-                psi_i_m(c, m) = 2.0d+0 * psi(c, m) - psi_i_p(c, m)
+                psi(num_cells, m, material_num) = (1.0d+0 + (macro_tot(num_cells, material_num) * delta_x(num_cells)) &
+                    / (2.0d+0 * dabs(mu(m))) - delta_x(num_cells) &
+                    / (2.0d+0 * dabs(mu(m)) * chord(material_num)))**(-1) &
+                    * (psi_bound_r(m) + (tot_source(num_cells) * delta_x(num_cells)) &
+                    / (2.0d+0 * dabs(mu(m))) &
+                    + (delta_x(num_cells) * prob(material_num) * psi(num_cells, m, material_off_num)) &
+                    / (2.0d+0 * prob(material_off_num) * chord(material_num)))
+                psi_i_m(num_cells, m, material_num) = 2.0d+0 * psi(num_cells, m, material_num) - psi_bound_r(m)
+            end do
+            ! Rest of the cells (sans right bounding cell)
+            do c = (num_cells - 1), 1, -1
+                do m = 1, (num_ords / 2)
+                    ! Continuation of boundaries
+                    psi_i_p(c, m, material_num) = psi_i_m(c + 1, m, material_num)
+                    psi(c, m, material_num) = (1.0d+0 + (macro_tot(c, material_num) * delta_x(c)) &
+                        / (2.0d+0 * dabs(mu(m))) - delta_x(c) &
+                        / (2.0d+0 * dabs(mu(m)) * chord(material_num)))**(-1) &
+                        * (psi_i_p(c, m, material_num) + (tot_source(c) * delta_x(c)) &
+                        / (2.0d+0 * dabs(mu(m))) &
+                        + (delta_x(c) * prob(material_num) * psi(c, m, material_off_num)) &
+                        / (2.0d+0 * prob(material_off_num) * chord(material_num)))
+                    psi_i_m(c, m, material_num) = 2.0d+0 * psi(c, m, material_num) - psi_i_p(c, m, material_num)
+                end do
+            end do
+
+            ! Calculate phi from the individual psi calculations
+            do c = 1, num_cells
+                do k = 1, num_materials
+                    weighted_sum = 0.0d+0
+                    do m = 1, num_ords
+                        weighted_sum = weighted_sum + weights(m) * psi(c, m, k)
+                    end do
+                    phi_new_inner(c, k) = weighted_sum  ! 1/cm^2-s-MeV
+                end do
+            end do
+
+            ! Relative error for the inner loop
+            iterations_inner = iterations_inner + int(1, 8)
+            err = maxval(dabs((phi_new_inner - phi_old_inner)) / phi_new_inner)
+            if (err <= tolerance) then
+                cont_calc_inner = .false.
+            else if (iterations_inner > num_iter_inner) then
+                cont_calc_inner = .false.
+                print *, "No convergence on outer iteration number ", iterations_outer
+            end if
+        end do  ! Inner
+
+        ! Calculate the overall psi
+        do c = 1, num_cells
+            do m = 1, num_ords
+                do k = 1, num_materials
+                    psi_overall(c, m) = psi_overall(c, m) + prob(k) * psi(c, m, k)
+                end do
             end do
         end do
 
-        ! Calculate phi from psi
+        ! Calculate phi from the overall psi
         do c = 1, num_cells
             weighted_sum = 0.0d+0
             do m = 1, num_ords
-                weighted_sum = weighted_sum + weights(m) * psi(c, m)
+                weighted_sum = weighted_sum + weights(m) * psi_overall(c, m)
             end do
-            phi_new(c) = weighted_sum  ! 1/cm^2-s-MeV
+            phi_new_outer(c) = weighted_sum  ! 1/cm^2-s-MeV
         end do
 
-        ! Relative error
-        iterations = iterations + int(1, 8)
-        err = maxval(dabs((phi_new - phi_old)) / phi_new)
+        ! Relative error for the outer loop
+        iterations_outer = iterations_outer + int(1, 8)
+        err = maxval(dabs((phi_new_outer - phi_old_outer)) / phi_new_outer)
         if (err <= tolerance) then
-            cont_calc = .false.
-            print *, "Quit after ", iterations , " iterations"
-        else if (iterations > num_iter) then
-            cont_calc = .false.
-            print *, "Quit after ", iterations, " iterations"
+            cont_calc_outer = .false.
+        else if (iterations_outer > num_iter_outer) then
+            cont_calc_outer = .false.
+            print *, "No convergence on outer loop; quit after ", iterations_outer, " iterations"
         end if
-    end do
+    end do  ! Outer
 
-    ! Check balances
-    leakage_l = 0.0d+0
-    leakage_r = 0.0d+0
-    total_abs = 0.0d+0
-    balance_source_l = 0.0d+0
-    balance_source_r = 0.0d+0
-    source_dist = 0.0d+0
-    ! Tally the boundary sources (currents)
-    do m = 1, (num_ords / 2)
-        balance_source_r = balance_source_r + weights(m) * dabs(mu(m)) * psi_bound_r(m)
-    end do
-    do m = (num_ords / 2 + 1), num_ords
-        balance_source_l = balance_source_l + weights(m) * dabs(mu(m)) * psi_bound_l(m)
-    end do
-    ! Tally the overall losses due to leakage and absorption, as well as the distributed source
-    do c = 1, num_cells
-        ! Leakage in neg. direction from left face
-        if (c == 1) then
-            do m = 1, (num_ords / 2)
-                leakage_l = leakage_l + dabs(mu(m)) * weights(m) * psi_i_m(c, m)
-            end do
-        ! Leakage in pos. direction from right face
-        else if (c == num_cells) then
-            do m = (num_ords / 2 + 1), num_ords
-                leakage_r = leakage_r + dabs(mu(m)) * weights(m) * psi_i_p(c, m)
-            end do
-        end if
-        ! Total absorption in system
-        total_abs = total_abs + (macro_tot(c) - macro_scat(c)) * delta_x(c) * phi_new(c)
-        ! Distributed source
-        source_dist = source_dist + spont_source(c) * delta_x(c)
-    end do
-    print *, "Leakage left: ", leakage_l
-    print *, "Leakage right: ", leakage_r
-    print *, "Source left: ", balance_source_l
-    print *, "Source right: ", balance_source_r
-    print *, "Distributed source: ", source_dist
-    print *, "Absorption loss: ", total_abs
-    print *, "Source is ", balance_source_l + balance_source_r + source_dist
-    print *, "Loss is ", leakage_l + leakage_r + total_abs
-    balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
-    print *, "Balance (source - loss) is ", balance
+    ! ! Check balances
+    ! leakage_l = 0.0d+0
+    ! leakage_r = 0.0d+0
+    ! total_abs = 0.0d+0
+    ! balance_source_l = 0.0d+0
+    ! balance_source_r = 0.0d+0
+    ! source_dist = 0.0d+0
+    ! ! Tally the boundary sources (currents)
+    ! do m = 1, (num_ords / 2)
+    !     balance_source_r = balance_source_r + weights(m) * dabs(mu(m)) * psi_bound_r(m)
+    ! end do
+    ! do m = (num_ords / 2 + 1), num_ords
+    !     balance_source_l = balance_source_l + weights(m) * dabs(mu(m)) * psi_bound_l(m)
+    ! end do
+    ! ! Tally the overall losses due to leakage and absorption, as well as the distributed source
+    ! do c = 1, num_cells
+    !     ! Leakage in neg. direction from left face
+    !     if (c == 1) then
+    !         do m = 1, (num_ords / 2)
+    !             leakage_l = leakage_l + dabs(mu(m)) * weights(m) * psi_i_m(c, m)
+    !         end do
+    !     ! Leakage in pos. direction from right face
+    !     else if (c == num_cells) then
+    !         do m = (num_ords / 2 + 1), num_ords
+    !             leakage_r = leakage_r + dabs(mu(m)) * weights(m) * psi_i_p(c, m)
+    !         end do
+    !     end if
+    !     ! Total absorption in system
+    !     total_abs = total_abs + (macro_tot(c) - macro_scat(c)) * delta_x(c) * phi_new(c)
+    !     ! Distributed source
+    !     source_dist = source_dist + spont_source(c) * delta_x(c)
+    ! end do
+    ! print *, "Leakage left: ", leakage_l
+    ! print *, "Leakage right: ", leakage_r
+    ! print *, "Source left: ", balance_source_l
+    ! print *, "Source right: ", balance_source_r
+    ! print *, "Distributed source: ", source_dist
+    ! print *, "Absorption loss: ", total_abs
+    ! print *, "Source is ", balance_source_l + balance_source_r + source_dist
+    ! print *, "Loss is ", leakage_l + leakage_r + total_abs
+    ! balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
+    ! print *, "Balance (source - loss) is ", balance
 
     ! Create plot
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
-    open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
+    open(unit=7, file="./out/steady_state_slab_closure.out", form="formatted", &
          status="replace", action="write")
     do i = 1, num_cells
-        write(7,*) cell_vector(i), phi_new(i)
+        write(7,*) cell_vector(i), phi_new_outer(i)
     end do
     close(7)
 end program steady_state_slab_closure

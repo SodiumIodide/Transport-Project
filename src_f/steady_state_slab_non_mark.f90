@@ -57,8 +57,6 @@ program steady_state_slab_non_mark
 
     ! Legendre Gauss Quadrature values
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
-    !call gauleg(-1.0d+0, 1.0d+0, ordinates, weights, num_ords)
-    !mu = ordinates
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
 
@@ -125,13 +123,11 @@ program steady_state_slab_non_mark
         ! First cell (right boundary)
         ! Ordinate loop, only consider neg. ords for backwards motion
         do m = 1, (num_ords / 2)
-            ! Lewis and Miller Eq. 3-42
             psi(num_cells, m) = (1.0d+0 + (macro_tot(num_cells) * delta_x(num_cells)) &
                                  / (2.0d+0 * dabs(mu(m))))**(-1) &
                                 * (psi_bound_r(m) + (tot_source(num_cells) &
                                                      * delta_x(num_cells)) &
                                    / (2.0d+0 * dabs(mu(m))))
-            ! Lewis and Miller Eq. 3-43
             psi_i_m(num_cells, m) = 2.0d+0 * psi(num_cells, m) - psi_bound_r(m)
         end do
         ! Rest of the cells (sans right bounding cell)

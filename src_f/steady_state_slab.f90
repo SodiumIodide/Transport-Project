@@ -83,8 +83,7 @@ program steady_state_slab
     num_ind_cells = 0
 
     ! Legendre Gauss Quadrature values over chosen ordinates
-    !call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
-    call gauleg(-1.0d+0, 1.0d+0, ordinates, weights, num_ords)
+    call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
     mu = ordinates(num_ords:1:-1)
     weights = weights(num_ords:1:-1)
 
