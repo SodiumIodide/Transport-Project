@@ -290,7 +290,19 @@ program steady_state_slab_closure
     open(unit=7, file="./out/steady_state_slab_closure.out", form="formatted", &
          status="replace", action="write")
     do i = 1, num_cells
-        write(7,*) cell_vector(i), phi_new_outer(i)
+        write(7, *) cell_vector(i), phi_new_outer(i)
     end do
     close(7)
+    open(unit=8, file="./out/steady_state_slab_closure_1.out", form="formatted", &
+         status="replace", action="write")
+    do i = 1, num_cells
+        write(8, *) cell_vector(i), phi_new_inner(i, 1)
+    end do
+    close(8)
+    open(unit=9, file="./out/steady_state_slab_closure_2.out", form="formatted", &
+         status="replace", action="write")
+    do i = 1, num_cells
+        write(9, *) cell_vector(i), phi_new_inner(i, 2)
+    end do
+    close(9)
 end program steady_state_slab_closure
