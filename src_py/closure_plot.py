@@ -32,7 +32,7 @@ def main():
         if i == 0:
             legend_title = "Total Material"
         else:
-            legend_title = "Material " + str(i + 1)
+            legend_title = "Material " + str(i)
         plt.plot(x_values, flux, label=legend_title)
     plt.grid(which='major', axis='both')
     plt.legend()

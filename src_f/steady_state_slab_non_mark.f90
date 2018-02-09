@@ -8,12 +8,12 @@ program steady_state_slab_non_mark
         num_iter = 5000
     integer, parameter :: &
         num_ords = 16, &
-        num_cells = int(1e4, 4)
+        num_cells = int(2.0d+2, 4)
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 1.0d+0, &  ! cm
-        scat_const = 0.2d+0, &  ! 1/cm
+        thickness = 10.0d+0, &  ! cm
+        scat_const = 0.9d+0, &  ! 1/cm
         tot_const = 1.0d+0  ! 1/cm
 
     ! Material parameters

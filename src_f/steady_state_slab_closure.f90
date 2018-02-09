@@ -9,7 +9,7 @@ program steady_state_slab_closure
         num_iter_outer = 100000
     integer, parameter :: &
         num_ords = 16, &
-        num_cells = int(1e2, 4), &
+        num_cells = int(200.0d+0, 4), &
         num_materials = 2
 
     ! Material properties
@@ -18,9 +18,10 @@ program steady_state_slab_closure
 
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
-        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
-        tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
-        chord = (/0.5, 0.4/)  ! cm
+        tot_const = (/ dble(10)/dble(99), dble(100)/dble(11) /), &  ! 1/cm
+        scat_const = (/ dble(10)/dble(99)*0.5d+0, dble(100)/dble(11)*0.5d+0 /), &  ! 1/cm
+        chord = (/0.1d+0, 0.1d+0/)  ! cm
+        !chord = (/dble(99)/dble(100), dble(11)/dble(100)/)  ! cm
     real(8), dimension(num_materials) :: &
         prob
 
@@ -81,10 +82,10 @@ program steady_state_slab_closure
 
     ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
-    !psi_bound_l(:) = 1.0d+0  ! Isotropic source
-    psi_bound_l(:) = 0.0d+0  ! Vacuum
+    psi_bound_l(:) = 2.0d+0  ! Isotropic source
+    !psi_bound_l(:) = 0.0d+0  ! Vacuum
     ! Beam source (in conj. with vacuum):
-    psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
+    !psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
 
     ! Right boundary
     !psi_bound_r(:) = 1.0d+0  ! Isotropic source
@@ -93,8 +94,8 @@ program steady_state_slab_closure
     !psi_bound_r(1) = 1.0d+0 / (mu(1) * weights(1))
 
     ! Tolerance for ending calculation
-    tolerance_inner = epsilon(1.0d+0)
-    tolerance_outer = epsilon(1.0d+0)
+    tolerance_inner = 1.0d-9
+    tolerance_outer = 1.0d-9
 
     ! Initial material number
     material_num = 1
