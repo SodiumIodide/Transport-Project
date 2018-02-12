@@ -122,7 +122,7 @@ program steady_state_slab
         ! Fill Markovian geometry
         ! Allocations and deallocations of delta_x and materials should be
         ! Handled by the subroutine
-        call get_geometry(delta_x, x_points, materials, chord_a, chord_b, &
+        call get_geometry(delta_x, x_points, materials, chord(1), chord(2), &
                           thickness, num_ind_cells)
 
         ! Allocate and define properties
