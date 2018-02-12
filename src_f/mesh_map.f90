@@ -11,11 +11,12 @@ module mesh_map
 
         integer, intent(in) :: &
             struct_size, unstruct_size
+        ! Allocated as (num_ind_cells)
         real(8), dimension(:), allocatable, intent(in) :: &
             unstruct_delta
         real(8), dimension(struct_size), intent(in) :: &
             struct
-        real(8), dimension(:), allocatable, intent(inout) :: &
+        real(8), dimension(:), allocatable, intent(out) :: &
             unstruct
         real(8), intent(in) :: &
             struct_delta
@@ -51,9 +52,17 @@ module mesh_map
 
             ! Carry over leftover distance
             if (leftover_distance /= 0.0d+0) then
-                weight_tally = weight_tally + leftover_distance * struct(counter)  ! unit*cm
-                distance_tally = distance_tally + leftover_distance  ! cm
-                leftover_distance = 0.0d+0  ! cm
+                ! If leftover_distance is still over-reaching the tally boundaries
+                if ((distance_tally + leftover_distance) > unstruct_distance_tally) then
+                    delta = unstruct_delta(i)  ! cm
+                    leftover_distance = struct_distance_tally - unstruct_distance_tally  ! cm
+                    distance_overlap = .true.
+                else
+                    delta = leftover_distance  ! cm
+                    leftover_distance = 0.0d+0  ! cm
+                end if
+                weight_tally = weight_tally + delta * struct(counter)  ! unit*cm
+                distance_tally = distance_tally + delta  ! cm
             end if
 
             do while (.not. distance_overlap)
@@ -65,7 +74,7 @@ module mesh_map
 
                 ! Check for boundary overlap
                 if ((distance_tally + struct_delta) > unstruct_distance_tally) then
-                    delta = unstruct_distance_tally - (distance_tally + struct_delta)  ! cm
+                    delta = unstruct_distance_tally - distance_tally  ! cm
                     leftover_distance = struct_distance_tally - unstruct_distance_tally  ! cm
                     distance_overlap = .true.
                 else
@@ -82,9 +91,9 @@ module mesh_map
                 if (distance_overlap) then
                     counter = counter - 1
                 end if
-            end do
+            end do  ! Structured loop
             unstruct(i) = weight_tally / unstruct_delta(i)  ! unit
-        end do
+        end do  ! Unstructured loop
     end subroutine struct_to_unstruct
 
     subroutine unstruct_to_struct(unstruct, unstruct_delta, struct, struct_delta, struct_size)
@@ -92,11 +101,10 @@ module mesh_map
 
         integer, intent(in) :: &
             struct_size
+        ! Allocated as (num_ind_cells)
         real(8), dimension(:), allocatable, intent(in) :: &
-            unstruct_delta
-        real(8), dimension(:), allocatable, intent(in) :: &
-            unstruct
-        real(8), dimension(struct_size), intent(inout) :: &
+            unstruct_delta, unstruct
+        real(8), dimension(struct_size), intent(out) :: &
             struct
         real(8), intent(in) :: &
             struct_delta
@@ -128,8 +136,17 @@ module mesh_map
 
             ! Carry over leftover distance
             if (leftover_distance /= 0.0d+0) then
-                weight_tally = weight_tally + leftover_distance * unstruct(counter)  ! unit*cm
-                distance_tally = distance_tally + leftover_distance  ! cm
+                ! If leftover_distance is still over-reaching the tally boundaries
+                if ((distance_tally + leftover_distance) > struct_distance_tally) then
+                    delta = struct_delta  ! cm
+                    leftover_distance = unstruct_distance_tally - struct_distance_tally  ! cm
+                    distance_overlap = .true.
+                else
+                    delta = leftover_distance  ! cm
+                    leftover_distance = 0.0d+0  ! cm
+                end if
+                weight_tally = weight_tally + delta * unstruct(counter)  ! unit*cm
+                distance_tally = distance_tally + delta  ! cm
                 leftover_distance = 0.0d+0  ! cm
             end if
 
@@ -142,7 +159,7 @@ module mesh_map
 
                 ! Check for boundary overlap
                 if ((distance_tally + unstruct_delta(counter)) > struct_distance_tally) then
-                    delta = struct_distance_tally - (distance_tally + unstruct_delta(counter))  ! cm
+                    delta = struct_distance_tally - distance_tally  ! cm
                     leftover_distance = unstruct_distance_tally - struct_distance_tally  ! cm
                     distance_overlap = .true.
                 else
@@ -159,33 +176,110 @@ module mesh_map
                 if (distance_overlap) then
                     counter = counter - 1
                 end if
-            end do
+            end do  ! Unstructured loop
             struct(i) = weight_tally / struct_delta  ! unit
-        end do
+        end do  ! Structured loop
     end subroutine unstruct_to_struct
 
-!    subroutine material_calc(phi_mat, struct_size, phi_morph, materials, unstruct_size, num_materials)
-!        implicit none
+    subroutine material_calc(unstruct, materials, unstruct_delta, &
+                             material_struct, struct_delta, struct_size, num_materials)
+        implicit none
 
-!        integer, intent(in) :: &
-!            struct_size, unstruct_size, num_materials
-!        real(8), dimension(:), allocatable, intent(in) :: &
-!            phi_morph
-!        integer, dimension(:), allocatable, intent(in) :: &
-!            materials
-!        real(8), dimension(struct_size, num_materials), intent(inout) :: &
-!            phi_mat
+        integer, intent(in) :: &
+            struct_size, num_materials
+        real(8), dimension(:), allocatable, intent(in) :: &
+            unstruct_delta
+        ! Allocated as (num_ind_cells)
+        real(8), dimension(:), allocatable, intent(in) :: &
+            unstruct
+        ! Allocated as (num_ind_cells)
+        integer, dimension(:), allocatable, intent(in) :: &
+            materials
+        real(8), dimension(struct_size, num_materials), intent(inout) :: &
+            material_struct
+        real(8), intent(in) :: &
+            struct_delta
+        integer :: &
+            i, k, counter, material_num
+        real(8) :: &
+            distance_tally, unstruct_distance_tally, struct_distance_tally, weight_tally, delta, leftover_distance, switch
+        logical :: &
+            distance_overlap
 
-!        integer :: &
-!            i, counter
-!        real(8) :: &
-!            distance_tally, unstruct_distance_tally, struct_distance_tally, weight_tally, delta, leftover_distance
-!        logical :: &
-!            distance_overlap
+        do k = 1, num_materials
+            ! Assign counter to zero due to pre-fetch increment
+            counter = 0
+            ! Assign tallies
+            distance_tally = 0.0d+0  ! cm
+            unstruct_distance_tally = 0.0d+0  ! cm
+            struct_distance_tally = 0.0d+0  ! cm
+            leftover_distance = 0.0d+0  ! cm
+            switch = 0.0d+0
 
-!        do i = 1, struct_size
-!            distance_overlap = .false.
-!            weight_tally = 0.0d+0  ! unit*cm
-!        end do
-!    end subroutine material_calc
+            ! Structured array does not require an allocatable assignment
+
+            ! Loop for mapping the unstructured to the structured mesh
+            do i = 1, struct_size
+                ! Start from the border with a zero weight for the current cell
+                distance_overlap = .false.
+                weight_tally = 0.0d+0  ! unit*cm
+
+                ! Increment unstructured distance tally
+                struct_distance_tally = struct_distance_tally + struct_delta  ! cm
+
+                ! Carry over leftover distance
+                if (leftover_distance /= 0.0d+0) then
+                    ! If leftover distance is still over-reaching tally boundaries
+                    if ((distance_tally + leftover_distance) > struct_distance_tally) then
+                        delta = struct_delta  ! cm
+                        leftover_distance = unstruct_distance_tally - struct_distance_tally  ! cm
+                        distance_overlap = .true.
+                    else
+                        delta = leftover_distance  ! cm
+                        leftover_distance = 0.0d+0  ! cm
+                    end if
+                    weight_tally = weight_tally + delta * unstruct(counter) * switch  ! unit*cm
+                    distance_tally = distance_tally + delta  ! cm
+                end if
+
+                do while (.not. distance_overlap)
+                    ! Increment counter (structured index)
+                    counter = counter + 1
+
+                    ! Increment structured distance tally
+                    unstruct_distance_tally = unstruct_distance_tally + unstruct_delta(counter)  ! cm
+
+                    ! Material number for calculations
+                    material_num = materials(counter)
+                    ! Tally switch for each material
+                    if (material_num == k) then
+                        switch = 1.0d+0
+                    else
+                        switch = 0.0d+0
+                    end if
+
+                    ! Check for boundary overlap
+                    if ((distance_tally + unstruct_delta(counter)) > struct_distance_tally) then
+                        delta = struct_distance_tally - distance_tally  ! cm
+                        leftover_distance = unstruct_distance_tally - struct_distance_tally  ! cm
+                        distance_overlap = .true.
+                    else
+                        delta = unstruct_delta(counter)  ! cm
+                    end if
+
+                    ! Increment the known distance tally
+                    distance_tally = distance_tally + delta  ! cm
+
+                    ! Apply linear weighted tally
+                    weight_tally = weight_tally + delta * unstruct(counter) * switch  ! unit*cm
+
+                    ! Reset counter to use leftover distance and re-use value
+                    if (distance_overlap) then
+                        counter = counter - 1
+                    end if
+                end do  ! Unstructured loop
+                material_struct(i, material_num) = weight_tally / struct_delta  ! unit
+            end do  ! Structured loop
+        end do  ! Material loop
+    end subroutine material_calc
 end module mesh_map

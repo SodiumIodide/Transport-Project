@@ -9,7 +9,7 @@ program steady_state_slab_closure
         num_iter_outer = 100000
     integer, parameter :: &
         num_ords = 16, &
-        num_cells = int(200.0d+0, 4), &
+        num_cells = int(2.0d+2, 4), &
         num_materials = 2
 
     ! Material properties

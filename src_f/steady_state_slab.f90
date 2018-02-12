@@ -8,7 +8,7 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter_outer = int(5000, 8), &
+        num_iter_outer = int(20000, 8), &
         num_iter_inner = int(5000, 8)
     integer, parameter :: &
         num_cells = int(100, 4), &
@@ -51,7 +51,7 @@ program steady_state_slab
     real(8), dimension(num_cells) :: &
         phi_new_outer, phi_old_outer
     real(8), dimension(num_cells, num_materials) :: &
-        phi_mat
+        psi_mat, phi_mat
     ! Allocated as (num_ind_cells)
     real(8), dimension(:), allocatable :: &
         phi_morph_new, phi_morph_old
@@ -72,6 +72,7 @@ program steady_state_slab
         cell_vector
 
     ! Assigment of material variables
+    phi_mat(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     ! Assignment of initial calculation variables
     phi_new_outer(:) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
     phi_old_outer(:) = 0.0d+0  ! 1/cm^2-s-MeV
@@ -89,10 +90,10 @@ program steady_state_slab
 
     ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
-    !psi_bound_l(:) = 1.0d+0  ! Isotropic source
-    psi_bound_l(:) = 0.0d+0  ! Vacuum
+    psi_bound_l(:) = 2.0d+0  ! Isotropic source
+    !psi_bound_l(:) = 0.0d+0  ! Vacuum
     ! Beam source (in conj. with vacuum):
-    psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
+    !psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
 
     ! Right boundary
     !psi_bound_r(:) = 1.0d+0  ! Isotropic source
@@ -110,6 +111,7 @@ program steady_state_slab
     cont_calc_outer = .true.
     ! Start counter at zero
     iterations_outer = int(0, 8)
+
     ! Outer loop over overall mixed system
     do while (cont_calc_outer)
         phi_old_outer = phi_new_outer  ! 1/cm^2-s-MeV
@@ -176,13 +178,11 @@ program steady_state_slab
             ! Ordinate loop, only consider the pos. ords for forward motion
             do m = (num_ords / 2 + 1), num_ords
                 material_num = materials(1)
-                ! Lewis and Miller Eq. 3-40
                 psi(1, m) = (1.0d+0 + (macro_tot(1, material_num) * delta_x(1)) &
                              / (2.0d+0 * dabs(mu(m))))**(-1) &
                             * (psi_bound_l(m) &
                                + (tot_source(1, material_num) * delta_x(1)) &
                                / (2.0d+0 * dabs(mu(m))))
-                ! Lewis and Miller Eq. 3-41
                 psi_i_p(1, m) = 2.0d+0 * psi(1, m) - psi_bound_l(m)
             end do
             ! Rest of the cells (sans left bounding cell)
@@ -190,12 +190,10 @@ program steady_state_slab
                 do m = (num_ords / 2 + 1), num_ords
                     ! Continuity of boundaries
                     psi_i_m(c, m) = psi_i_p(c - 1, m)
-                    ! Lewis and Miller Eq. 3-40
                     psi(c, m) = (1.0d+0 + (macro_tot(c, material_num) * delta_x(c)) &
                                  / (2.0d+0 * dabs(mu(m))))**(-1) &
                                 * (psi_i_m(c, m) + (tot_source(c, material_num) &
                                                     * delta_x(c)) / (2.0d+0 * dabs(mu(m))))
-                    ! Lewis and Miller Eq. 3-41
                     psi_i_p(c, m) = 2.0d+0 * psi(c, m) - psi_i_m(c, m)
                 end do
             end do
@@ -205,7 +203,6 @@ program steady_state_slab
             ! Ordinate loop, only consider neg. ords for backwards motion
             do m = 1, (num_ords / 2)
                 material_num = materials(num_ind_cells)
-                ! Lewis and Miller Eq. 3-42
                 psi(num_ind_cells, m) = (1.0d+0 + (macro_tot(num_ind_cells, material_num) &
                                                    * delta_x(num_ind_cells)) &
                                          / (2.0d+0 * dabs(mu(m))))**(-1) &
@@ -213,7 +210,6 @@ program steady_state_slab
                                            + (tot_source(num_ind_cells, material_num) &
                                               * delta_x(num_ind_cells)) &
                                            / (2.0d+0 * dabs(mu(m))))
-                ! Lewis and Miller Eq. 3-43
                 psi_i_m(num_ind_cells, m) = 2.0d+0 * psi(num_ind_cells, m) - psi_bound_r(m)
             end do
             ! Rest of the cells (sans right bounding cell)
@@ -222,18 +218,15 @@ program steady_state_slab
                     material_num = materials(c)
                     ! Continuation of boundaries
                     psi_i_p(c, m) = psi_i_m(c + 1, m)
-                    ! Lewis and Miller Eq. 3-42
                     psi(c, m) = (1.0d+0 + (macro_tot(c, material_num) * delta_x(c)) &
                                  / (2.0d+0 * dabs(mu(m))))**(-1) &
                                 * (psi_i_p(c, m) + (tot_source(c, material_num) &
                                                     * delta_x(c)) / (2.0d+0 * dabs(mu(m))))
-                    ! Lewis and Miller Eq. 3-43
                     psi_i_m(c, m) = 2.0d+0 * psi(c, m) - psi_i_p(c, m)
                 end do
             end do
 
             ! Calculate phi from psi
-            ! Lewis and Miller Eq. 3-5
             do c = 1, num_ind_cells
                 weighted_sum = 0.0d+0
                 do m = 1, num_ords
@@ -255,13 +248,19 @@ program steady_state_slab
         end do  ! Inner loop
 
         ! Obtain material balances
-        !cons_distance = 0.0d+0
-        !do c = 1, num_ind_cells
-        !    c
+        !do k = 1, num_materials
+        !    do c = 1, num_cells
+        !        do m = 1, num_ords
+        !            if (phi_mat(c, k) == 0.0d+0) then
+        !                phi_mat(c, k) = 
+        !            end if
+        !        end do
+        !    end do
         !end do
 
         ! Map the unstructured phi onto the structured phi
         call unstruct_to_struct(phi_morph_new, delta_x, phi_new_outer, struct_thickness, num_cells)
+        ! NOTE: Compare these two, need to average in some way
 
         ! Relative error for outer loop
         iterations_outer = iterations_outer + int(1, 8)
