@@ -18,15 +18,14 @@ program steady_state_slab
     ! Material properties
     real(8), parameter :: &
         thickness = 1.0d+0, &  ! cm
-        chord_a = 0.05d+0, &  ! cm
-        chord_b = 0.05d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells)  ! cm
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
     real(8), dimension(num_materials), parameter :: &
         scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
         tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
-        spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
+        spont_source_const = (/0.0d+0, 0.0d+0/),&  ! 1/cm^3
+        chord = (/0.05d+0, 0.05d+0/)  ! cm
 
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)

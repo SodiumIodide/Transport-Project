@@ -182,11 +182,12 @@ module mesh_map
     end subroutine unstruct_to_struct
 
     subroutine material_calc(unstruct, materials, unstruct_delta, &
-                             material_struct, struct_delta, struct_size, num_materials)
+                             material_struct, struct_delta, struct_size, &
+                             & num_materials, num_real)
         implicit none
 
         integer, intent(in) :: &
-            struct_size, num_materials
+            struct_size, num_materials, num_real
         real(8), dimension(:), allocatable, intent(in) :: &
             unstruct_delta
         ! Allocated as (num_ind_cells)
@@ -278,7 +279,15 @@ module mesh_map
                         counter = counter - 1
                     end if
                 end do  ! Unstructured loop
-                material_struct(i, material_num) = weight_tally / struct_delta  ! unit
+                
+                ! Average the results, or just append if no results previously
+                if (material_struct(i, material_num) == 0.d+0) then
+                    material_struct(i, material_num) = weight_tally / struct_delta  ! unit
+                else
+                    material_struct(i, material_num) = (dble(num_real - 1) &
+                        * material_struct(i, material_num) + material_struct(i, material_num)) &
+                        / dble(num_real)  ! weighted unit
+                end if
             end do  ! Structured loop
         end do  ! Material loop
     end subroutine material_calc
