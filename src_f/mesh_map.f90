@@ -2,7 +2,8 @@ module mesh_map
     private
     public :: &
         struct_to_unstruct, &
-        unstruct_to_struct
+        unstruct_to_struct, &
+        material_calc
 
     contains
 
