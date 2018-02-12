@@ -181,7 +181,7 @@ module mesh_map
         end do  ! Structured loop
     end subroutine unstruct_to_struct
 
-    subroutine material_calc(unstruct, materials, unstruct_delta, &
+    subroutine material_calc(unstruct, unstruct_delta, materials, &
                              material_struct, struct_delta, struct_size, &
                              & num_materials, num_real)
         implicit none

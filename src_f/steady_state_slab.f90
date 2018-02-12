@@ -48,9 +48,9 @@ program steady_state_slab
     real(8) :: &
         tolerance, weighted_sum, err_inner, err_outer, cons_distance
     real(8), dimension(num_cells) :: &
-        phi_new_outer, phi_old_outer
+        phi_outer
     real(8), dimension(num_cells, num_materials) :: &
-        psi_mat, phi_mat
+        psi_mat, phi_mat_old, phi_mat_new
     ! Allocated as (num_ind_cells)
     real(8), dimension(:), allocatable :: &
         phi_morph_new, phi_morph_old
@@ -71,10 +71,10 @@ program steady_state_slab
         cell_vector
 
     ! Assigment of material variables
-    phi_mat(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
+    phi_mat_new(:, :) = 1.0d+0  ! 1/cm^2-s-MeV
+    phi_mat_old(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     ! Assignment of initial calculation variables
-    phi_new_outer(:) = 1.0d+0  ! 1/cm^2-s-MeV, assume scalar flux is init. const.
-    phi_old_outer(:) = 0.0d+0  ! 1/cm^2-s-MeV
+    phi_outer(:) = 1.0d+0  ! 1/cm^2-s-MeV
     ! Material dependent fluxes
     phi_div(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     ! Can adjust boundaries by group and by ordinate
@@ -113,7 +113,7 @@ program steady_state_slab
 
     ! Outer loop over overall mixed system
     do while (cont_calc_outer)
-        phi_old_outer = phi_new_outer  ! 1/cm^2-s-MeV
+        phi_mat_old = phi_mat_new  ! 1/cm^2-s-MeV
 
         cont_calc_inner = .true.
         ! Start inner iterations at zero
@@ -246,24 +246,18 @@ program steady_state_slab
             end if
         end do  ! Inner loop
 
+        iterations_outer = iterations_outer + int(1, 8)
+
         ! Obtain material balances
-        !do k = 1, num_materials
-        !    do c = 1, num_cells
-        !        do m = 1, num_ords
-        !            if (phi_mat(c, k) == 0.0d+0) then
-        !                phi_mat(c, k) = 
-        !            end if
-        !        end do
-        !    end do
-        !end do
+        call material_calc(phi_morph_new, delta_x, materials, phi_mat_new, &
+                           struct_thickness, num_cells, num_materials, iterations_outer)
 
         ! Map the unstructured phi onto the structured phi
-        call unstruct_to_struct(phi_morph_new, delta_x, phi_new_outer, struct_thickness, num_cells)
+        !call unstruct_to_struct(phi_morph_new, delta_x, phi_new_outer, struct_thickness, num_cells)
         ! NOTE: Compare these two, need to average in some way
 
         ! Relative error for outer loop
-        iterations_outer = iterations_outer + int(1, 8)
-        err_outer = maxval(dabs((phi_new_outer - phi_old_outer)) / phi_new_outer)
+        err_outer = maxval(dabs((phi_mat_new - phi_mat_old)) / phi_mat_new)
         if (err_outer <= tolerance) then
             cont_calc_outer = .false.
             print *, "Quit after ", iterations_outer , " outer iterations"
@@ -289,8 +283,17 @@ program steady_state_slab
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
     open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
          status="replace", action="write")
+    open(unit=8, file="./out/steady_state_slab_1.out", form="formatted", &
+         status="replace", action="write")
+    open(unit=9, file="./out/steady_state_slab_2.out", form="formatted", &
+         status="replace", action="write")
     do i = 1, num_cells
-        write(7,*) cell_vector(i), phi_new_outer(i)
+        phi_outer(i) = phi_mat_new(i, 1) + phi_mat_new(i, 2)
+        write(7,*) cell_vector(i), phi_outer(i)
+        write(8,*) cell_vector(i), phi_mat_new(i, 1)
+        write(9,*) cell_vector(i), phi_mat_new(i, 2)
     end do
     close(7)
+    close(8)
+    close(9)
 end program steady_state_slab
