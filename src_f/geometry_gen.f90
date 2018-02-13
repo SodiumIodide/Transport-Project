@@ -6,23 +6,21 @@ module geometry_gen
     public :: &
         get_geometry
 
-    integer :: &
-        num_materials = 2
-
     contains
 
+    ! Currently written for 2 materials
     subroutine get_geometry(x_dist, x_arr, materials, chord_a, chord_b, thickness, num_cells)
         implicit none
 
         ! x_dist measures the delta_x values
         ! x_arr measures the overall distance
-        real(8), dimension(:), allocatable, intent(inout) :: &
+        real(8), dimension(:), allocatable, intent(out) :: &
             x_dist, x_arr
-        integer, dimension(:), allocatable, intent(inout) :: &
+        integer, dimension(:), allocatable, intent(out) :: &
             materials
         real(8), intent(in) :: &
             chord_a, chord_b, thickness
-        integer, intent(inout) :: &
+        integer, intent(out) :: &
             num_cells
         integer :: &
             material_num, i

@@ -101,4 +101,32 @@ module self_library
         weights = dble(intv_b - intv_a) / ((1.0d+0 - y_space**2) * prime**2) * &
                   (dble(order_two) / dble(order_one))**2
     end subroutine legendre_gauss_quad
+
+    subroutine mat_diff(mat1, mat2, num_x, num_y, err)
+        implicit none
+
+        integer, intent(in) :: &
+            num_x, num_y
+        real(8), dimension(num_x, num_y), intent(in) :: &
+            mat1, mat2
+        real(8), intent(out) :: &
+            err
+        integer :: &
+            i, j
+        real(8) :: &
+            difference
+
+        err = 0.0d+0
+
+        do i = 1, num_x
+            do j = 1, num_y
+                if ((mat1(i, j) /= 0.0d+0) .and. (mat2(i, j) /= 0.0d+0)) then
+                    difference = mat1(i, j) - mat2(i, j)
+                    if (difference > err) then
+                        err = difference
+                    end if
+                end if
+            end do
+        end do
+    end subroutine mat_diff
 end module self_library

@@ -10,7 +10,7 @@ program geometry_test
     integer, dimension(:), allocatable :: &
         materials
     real(8) :: &
-        thickness, chord_a, chord_b, cons_thickness, rand_num, distance
+        thickness, chord_a, chord_b, cons_thickness!, rand_num, distance
     integer :: &
         num_cells, i
 
@@ -43,6 +43,7 @@ program geometry_test
     do i = 1, num_cells
         write(7,*) x_arr(i), materials(i)
     end do
+    close(7)
 
     deallocate(x_dist)
     deallocate(x_arr)
