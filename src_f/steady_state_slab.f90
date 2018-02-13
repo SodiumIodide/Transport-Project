@@ -319,7 +319,7 @@ program steady_state_slab
         ! Obtain material balances
         call material_calc(phi_morph_new, delta_x, num_ind_cells, materials, phi_mat_new, &
                            struct_thickness, num_cells, num_materials, iterations_outer)
-        call material_boundaries()
+        !call material_boundaries()
 
         ! Map the unstructured phi onto the structured phi
         !call unstruct_to_struct(phi_morph_new, delta_x, phi_real, struct_thickness, num_cells)
