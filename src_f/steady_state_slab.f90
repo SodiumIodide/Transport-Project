@@ -9,7 +9,7 @@ program steady_state_slab
     ! Constant parameters
     integer(8), parameter :: &
         num_iter_outer = int(100000, 8), &
-        num_iter_inner = int(1000, 8)
+        num_iter_inner = int(10000, 8)
     integer, parameter :: &
         num_cells = int(100, 4), &
         num_ords = int(16, 4), &
@@ -21,15 +21,18 @@ program steady_state_slab
     real(8), parameter :: &
         thickness = 1.0d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
-        inner_tolerance = epsilon(1.0d+0), &
-        outer_tolerance = 1.0d-5
+        inner_tolerance = 1.0d-8, &
+        outer_tolerance = 1.0d-6
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
     real(8), dimension(num_materials), parameter :: &
-        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
+        !tot_const = (/ dble(10)/dble(99), dble(100)/dble(11) /), &  ! 1/cm
         tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
-        spont_source_const = (/0.0d+0, 0.0d+0/),&  ! 1/cm^3
-        chord = (/0.05d+0, 0.05d+0/)  ! cm
+        !scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
+        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
+        !chord = (/dble(99)/dble(100), dble(11)/dble(100)/),&  ! cm
+        chord = (/0.05d+0, 0.05d+0/), &  ! cm
+        spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables
     ! Allocated as (num_ind_cells) (by subroutine)
@@ -47,14 +50,17 @@ program steady_state_slab
     integer :: &
         i, c, m, k, num_ind_cells, material_num
     logical :: &
-        cont_calc_outer, cont_calc_inner
+        cont_calc_outer, cont_calc_inner, left_switch, right_switch
     real(8) :: &
         weighted_sum, err_inner, err_outer, total_chord, &
-        leakage_l, leakage_r, total_abs, balance_source_l, balance_source_r, source_dist, balance
+        leakage_l, leakage_r, total_abs, balance_source_l, balance_source_r, &
+        source_dist, balance
     real(8), dimension(num_cells) :: &
         phi_outer, phi_real
     real(8), dimension(num_cells, num_materials) :: &
         phi_mat_old, phi_mat_new
+    real(8), dimension(num_ords, num_materials) :: &
+        psi_mat_leak_l, psi_mat_leak_r
     ! Allocated as (num_ind_cells)
     real(8), dimension(:), allocatable :: &
         phi_morph_new, phi_morph_old
@@ -86,8 +92,11 @@ program steady_state_slab
         total_chord = total_chord + chord(k)
     end do
     prob = chord / total_chord
-    ! Material dependent fluxes
-    ! Can adjust boundaries by group and by ordinate
+    psi_mat_leak_l(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    psi_mat_leak_r(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    ! Tally averages for boundary leakage
+    left_switch = .false.
+    right_switch = .false.
 
     ! Initial value (assigned via get_geometry subroutine)
     num_ind_cells = 0
@@ -317,9 +326,52 @@ program steady_state_slab
         iterations_outer = iterations_outer + int(1, 8)
 
         ! Obtain material balances
+        ! Average flux in structured cells
         call material_calc(phi_morph_new, delta_x, num_ind_cells, materials, phi_mat_new, &
                            struct_thickness, num_cells, num_materials, iterations_outer)
-        !call material_boundaries()
+        ! Average leakage from material boundaries (for balance/tally purposes)
+        do k = 1, num_materials
+            ! Adjust the left switch
+            if (materials(1) == k) then
+                left_switch = .true.
+            else
+                left_switch = .false.
+            end if
+            ! Adjust the right switch
+            if (materials(num_ind_cells) == k) then
+                right_switch = .true.
+            else
+                right_switch = .false.
+            end if
+            ! Calculate the average negative leakage from left boundary
+            if (left_switch) then
+                do m = 1, (num_ords / 2)
+                    ! Don't weight the initial zero
+                    if (psi_mat_leak_l(m, k) == 0.0d+0) then
+                        psi_mat_leak_l(m, k) = psi_i_m(1, m)
+                    else
+                        psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) &
+                            + (psi_i_m(1, m) - psi_mat_leak_l(m, k)) / dble(iterations_outer)
+                    end if
+                end do
+            end if
+            ! Calculate the average positive leakage from right boundary
+            if (right_switch) then
+                do m = (num_ords / 2 + 1), num_ords
+                    ! Don't weight the initial zero
+                    if (psi_mat_leak_r(m, k) == 0.0d+0) then
+                        psi_mat_leak_r(m, k) = psi_i_p(num_ind_cells, m)
+                    else
+                        psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) &
+                            + (psi_i_p(num_ind_cells, m) - psi_mat_leak_r(m, k)) / dble(iterations_outer)
+                    end if
+                end do
+            end if
+        end do
+
+        if (mod(iterations_outer, 100) == 0) then
+            print *, "Realization number ", iterations_outer
+        end if
 
         ! Map the unstructured phi onto the structured phi
         !call unstruct_to_struct(phi_morph_new, delta_x, phi_real, struct_thickness, num_cells)
@@ -335,6 +387,7 @@ program steady_state_slab
         end if
     end do  ! Outer loop
 
+    ! Print the realization onto phi_real for plotting purposes
     call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
 
     ! Check balances outer loop
@@ -352,33 +405,35 @@ program steady_state_slab
         balance_source_l = balance_source_l + weights(m) * dabs(mu(m)) * psi_bound_l(m)
     end do
     ! Tally the overall losses due to leakage and absorption, as well as the distributed source
-    do c = 1, num_ind_cells
-        ! Leakage in neg. direction from left face
-        if (c == 1) then
-            do m = 1, (num_ords / 2)
-                leakage_l = leakage_l + dabs(mu(m)) * weights(m) * psi_i_m(c, m)
-            end do
-        ! Leakage in pos. direction from right face
-        else if (c == num_ind_cells) then
-            do m = (num_ords / 2 + 1), num_ords
-                leakage_r = leakage_r + dabs(mu(m)) * weights(m) * psi_i_p(c, m)
-            end do
-        end if
-        ! Total absorption in system
-        total_abs = total_abs + (macro_tot(materials(c)) - macro_scat(materials(c))) * delta_x(c) * phi_morph_new(c)
-        ! Distributed source
-        source_dist = source_dist + spont_source(materials(c)) * delta_x(c)
+    do c = 1, num_cells
+        do k = 1, num_materials
+            ! Leakage in neg. direction from left face
+            if (c == 1) then
+                do m = 1, (num_ords / 2)
+                    leakage_l = leakage_l + dabs(mu(m)) * weights(m) * prob(k) * psi_mat_leak_l(m, k)
+                end do
+            ! Leakage in pos. direction from right face
+            else if (c == num_cells) then
+                do m = (num_ords / 2 + 1), num_ords
+                    leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_mat_leak_r(m, k)
+                end do
+            end if
+            ! Total absorption in system
+            total_abs = total_abs + (macro_tot(k) - macro_scat(k)) * struct_thickness * prob(k) * phi_real(c)
+            ! Distributed source
+            !source_dist = source_dist + spont_source(k) * struct_thickness * prob(k)
+        end do
     end do
-    print *, "Leakage left: ", leakage_l
-    print *, "Leakage right: ", leakage_r
-    print *, "Source left: ", balance_source_l
-    print *, "Source right: ", balance_source_r
-    print *, "Distributed source: ", source_dist
-    print *, "Absorption loss: ", total_abs
-    print *, "Source is ", balance_source_l + balance_source_r + source_dist
-    print *, "Loss is ", leakage_l + leakage_r + total_abs
-    balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
-    print *, "Balance (source - loss) is ", balance
+    print *, "Reflection on left: ", leakage_l
+    print *, "Transmission on right: ", leakage_r
+    !print *, "Source left: ", balance_source_l
+    !print *, "Source right: ", balance_source_r
+    !print *, "Distributed source: ", source_dist
+    !print *, "Absorption loss: ", total_abs
+    !print *, "Source is ", balance_source_l + balance_source_r + source_dist
+    !print *, "Loss is ", leakage_l + leakage_r + total_abs
+    !balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
+    !print *, "Balance (source - loss) is ", balance
 
     ! Create plot
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)

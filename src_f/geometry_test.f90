@@ -16,8 +16,8 @@ program geometry_test
 
     thickness = 10.0d+0  ! cm
     cons_thickness = 0.0d+0  ! cm
-    chord_a = 1.0d+0  ! cm
-    chord_b = 1.0d+0  ! cm
+    chord_a =  dble(10)/dble(99) ! cm
+    chord_b = dble(100)/dble(11)  ! cm
     num_cells = 0
 
     allocate(x_dist(0))

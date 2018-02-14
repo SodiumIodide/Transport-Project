@@ -18,10 +18,12 @@ program steady_state_slab_closure
 
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
-        tot_const = (/ dble(10)/dble(99), dble(100)/dble(11) /), &  ! 1/cm
-        scat_const = (/ dble(10)/dble(99)*0.5d+0, dble(100)/dble(11)*0.5d+0 /), &  ! 1/cm
-        chord = (/0.1d+0, 0.1d+0/)  ! cm
+        !tot_const = (/ dble(10)/dble(99), dble(100)/dble(11) /), &  ! 1/cm
+        tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
+        !scat_const = (/ dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
+        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
         !chord = (/dble(99)/dble(100), dble(11)/dble(100)/)  ! cm
+        chord = (/0.1d+0, 0.1d+0/)  ! cm
     real(8), dimension(num_materials) :: &
         prob
 
@@ -275,16 +277,16 @@ program steady_state_slab_closure
             source_dist = source_dist + spont_source(c, k) * delta_x(c) * prob(k)
         end do
     end do
-    print *, "Leakage left: ", leakage_l
-    print *, "Leakage right: ", leakage_r
-    print *, "Source left: ", balance_source_l
-    print *, "Source right: ", balance_source_r
-    print *, "Distributed source: ", source_dist
-    print *, "Absorption loss: ", total_abs
-    print *, "Source is ", balance_source_l + balance_source_r + source_dist
-    print *, "Loss is ", leakage_l + leakage_r + total_abs
-    balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
-    print *, "Balance (source - loss) is ", balance
+    print *, "Reflection from left: ", leakage_l
+    print *, "Transmission on right: ", leakage_r
+    !print *, "Source left: ", balance_source_l
+    !print *, "Source right: ", balance_source_r
+    !print *, "Distributed source: ", source_dist
+    !print *, "Absorption loss: ", total_abs
+    !print *, "Source is ", balance_source_l + balance_source_r + source_dist
+    !print *, "Loss is ", leakage_l + leakage_r + total_abs
+    !balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
+    !print *, "Balance (source - loss) is ", balance
 
     ! Create plot
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
