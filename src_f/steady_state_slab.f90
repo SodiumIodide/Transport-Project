@@ -8,7 +8,7 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter_outer = int(100000, 8), &
+        num_iter_outer = int(1.0d+7, 8), &
         num_iter_inner = int(10000, 8)
     integer, parameter :: &
         num_cells = int(100, 4), &
@@ -19,19 +19,19 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 1.0d+0, &  ! cm
+        thickness = 10.0d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
-        inner_tolerance = 1.0d-8, &
-        outer_tolerance = 1.0d-6
+        inner_tolerance = 1.0d-6, &
+        outer_tolerance = 1.0d-7
     ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
 
     real(8), dimension(num_materials), parameter :: &
-        !tot_const = (/ dble(10)/dble(99), dble(100)/dble(11) /), &  ! 1/cm
-        tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
-        !scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
-        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
-        !chord = (/dble(99)/dble(100), dble(11)/dble(100)/),&  ! cm
-        chord = (/0.05d+0, 0.05d+0/), &  ! cm
+        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
+        !tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
+        !scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
+        chord = (/dble(99)/dble(100), dble(11)/dble(100)/),&  ! cm
+        !chord = (/0.05d+0, 0.05d+0/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables

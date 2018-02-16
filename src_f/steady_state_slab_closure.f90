@@ -18,12 +18,12 @@ program steady_state_slab_closure
 
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
-        !tot_const = (/ dble(10)/dble(99), dble(100)/dble(11) /), &  ! 1/cm
-        tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
-        !scat_const = (/ dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
-        scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
-        !chord = (/dble(99)/dble(100), dble(11)/dble(100)/)  ! cm
-        chord = (/0.1d+0, 0.1d+0/)  ! cm
+        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
+        !tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0/), &  ! 1/cm
+        !scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
+        chord = (/dble(99)/dble(10), dble(11)/dble(10)/)  ! cm
+        !chord = (/0.1d+0, 0.1d+0/)  ! cm
     real(8), dimension(num_materials) :: &
         prob
 
