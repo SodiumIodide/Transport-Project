@@ -148,7 +148,6 @@ module mesh_map
                 end if
                 weight_tally = weight_tally + delta * unstruct(counter)  ! unit*cm
                 distance_tally = distance_tally + delta  ! cm
-                leftover_distance = 0.0d+0  ! cm
             end if
 
             do while ((.not. distance_overlap) .and. (counter < unstruct_size))
@@ -165,6 +164,7 @@ module mesh_map
                     distance_overlap = .true.
                 else
                     delta = unstruct_delta(counter)  ! cm
+                    leftover_distance = 0.0d+0  ! cm
                 end if
 
                 ! Increment the known distance tally

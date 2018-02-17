@@ -14,7 +14,7 @@ program geometry_test
     integer :: &
         num_cells, i
 
-    thickness = 10.0d+0  ! cm
+    thickness = 0.1d+0  ! cm
     cons_thickness = 0.0d+0  ! cm
     chord_a =  dble(10)/dble(99) ! cm
     chord_b = dble(100)/dble(11)  ! cm

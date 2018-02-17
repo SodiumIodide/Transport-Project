@@ -9,9 +9,10 @@ program steady_state_slab
     ! Constant parameters
     integer(8), parameter :: &
         num_iter_outer = int(1.0d+7, 8), &
-        num_iter_inner = int(10000, 8)
+        num_iter_inner = int(10000, 8), &
+        seed = int(123456, 8)
     integer, parameter :: &
-        num_cells = int(100, 4), &
+        num_cells = int(2.0d+2, 4), &
         num_ords = int(16, 4), &
         num_materials = int(2, 4)
     logical, parameter :: &
@@ -19,16 +20,15 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 10.0d+0, &  ! cm
+        thickness = 0.1d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
-        inner_tolerance = 1.0d-6, &
-        outer_tolerance = 1.0d-7
-    ! For alpha (albedo boundary), 0.0 = no refl., 1.0 = total refl.
+        inner_tolerance = 1.0d-10, &
+        outer_tolerance = 1.0d-6
 
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
         !tot_const = (/1.0d+0, 1.0d+0/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*1.0d+0, dble(100)/dble(11)*0.0d+0 /), &  ! 1/cm
         !scat_const = (/0.2d+0, 0.3d+0/), &  ! 1/cm
         chord = (/dble(99)/dble(100), dble(11)/dble(100)/),&  ! cm
         !chord = (/0.05d+0, 0.05d+0/), &  ! cm
@@ -70,20 +70,15 @@ program steady_state_slab
     real(8), dimension(num_ords) :: &
         ordinates, weights, mu, psi_bound_l, psi_bound_r
 
-    ! Allocation variables
-    !real(8), dimension(:, :), allocatable :: &
-    !    two_d_arr
-    !real(8), dimension(:), allocatable :: &
-    !    one_d_arr
-
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
         cell_vector
+    character(len=1024) :: &
+        filename
 
     ! Assigment of material variables
     macro_tot = tot_const  ! 1/cm
     macro_scat = scat_const  ! 1/cm
-    phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
     phi_mat_new(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     phi_mat_old(:, :) = 1.0d+0  ! 1/cm^2-s-MeV
     ! Assignment of initial calculation variables
@@ -100,6 +95,9 @@ program steady_state_slab
 
     ! Initial value (assigned via get_geometry subroutine)
     num_ind_cells = 0
+
+    ! X values of flux for plotting
+    call linspace(cell_vector, 0.0d+0, thickness, num_cells)
 
     ! Legendre Gauss Quadrature values over chosen ordinates
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
@@ -120,7 +118,7 @@ program steady_state_slab
     !psi_bound_r(1) = 1.0d+0 / (mu(1) * weights(1))
 
     ! Start random generation seed
-    call RN_init_problem(int(12345678, 8), 1)
+    call RN_init_problem(seed, 1)
 
     ! Calculation: iterations
     cont_calc_outer = .true.
@@ -369,25 +367,49 @@ program steady_state_slab
             end if
         end do
 
-        if (mod(iterations_outer, 100) == 0) then
+        if (mod(iterations_outer, 1000) == 0) then
             print *, "Realization number ", iterations_outer
+        end if
+
+        ! Save the first few realizations
+        if (iterations_outer < 4) then
+            phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
+            ! Map the final realization onto phi_real
+            call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
+            ! Write the realization to an output file
+            write(filename, "(A18,I1,A4)") "./out/realization_", iterations_outer, ".out"
+            open(unit=7, file=filename, form="formatted", status="replace", action="write")
+            do i = 1, num_cells
+                write(7,*) cell_vector(i), phi_real(i)
+            end do
+            close(7)
         end if
 
         ! Map the unstructured phi onto the structured phi
         !call unstruct_to_struct(phi_morph_new, delta_x, phi_real, struct_thickness, num_cells)
 
         ! Relative error for outer loop
-        err_outer = maxval(dabs((phi_mat_new - phi_mat_old)) / phi_mat_new)
-        if (err_outer <= outer_tolerance) then
+        !err_outer = maxval(dabs((phi_mat_new - phi_mat_old)) / phi_mat_new)
+        !if (err_outer <= outer_tolerance) then
+        !    cont_calc_outer = .false.
+        !    print *, "Quit after ", iterations_outer , " outer iterations"
+        !else if (iterations_outer > num_iter_outer) then
+        !    cont_calc_outer = .false.
+        !    print *, "No convergence on outer loop: quit after maximum ", iterations_outer, " outer iterations"
+        !end if
+        if (iterations_outer > num_iter_outer) then
             cont_calc_outer = .false.
-            print *, "Quit after ", iterations_outer , " outer iterations"
-        else if (iterations_outer > num_iter_outer) then
-            cont_calc_outer = .false.
-            print *, "No convergence on outer loop: quit after maximum ", iterations_outer, " outer iterations"
         end if
+
+        ! Force at least 1000 calculations for outer loop in the case of long
+        ! chord lengths relative to the geometry thickness
+        !if (iterations_outer < 1000) then
+        !    cont_calc_outer = .true.
+        !end if
     end do  ! Outer loop
 
-    ! Print the realization onto phi_real for plotting purposes
+    ! Print the final realization onto phi_real for plotting purposes
+    phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
     call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
 
     ! Check balances outer loop
@@ -419,7 +441,7 @@ program steady_state_slab
                 end do
             end if
             ! Total absorption in system
-            total_abs = total_abs + (macro_tot(k) - macro_scat(k)) * struct_thickness * prob(k) * phi_real(c)
+            !total_abs = total_abs + (macro_tot(k) - macro_scat(k)) * struct_thickness * prob(k) * phi_real(c)
             ! Distributed source
             !source_dist = source_dist + spont_source(k) * struct_thickness * prob(k)
         end do
@@ -436,7 +458,6 @@ program steady_state_slab
     !print *, "Balance (source - loss) is ", balance
 
     ! Create plot
-    call linspace(cell_vector, 0.0d+0, thickness, num_cells)
     open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
          status="replace", action="write")
     open(unit=8, file="./out/steady_state_slab_1.out", form="formatted", &

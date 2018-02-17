@@ -21,6 +21,18 @@ def get_data(filename):
                                  float(re.match(pattern, line).group(2)))
     return (x_values, flux)
 
+def realization_plot(realname):
+    '''Plot of a geometry realization'''
+    plotname = realname.replace("out", "plots").replace(".plots", ".png")
+    x_values, flux = get_data(realname)
+    plt.plot(x_values, flux)
+    plt.grid(which='major', axis='both')
+    plt.xlabel("x (cm)")
+    plt.ylabel("Flux (1/cm^2-s-MeV)")
+    plt.savefig(plotname)
+    plt.clf()
+    plt.cla()
+
 def main():
     '''Main wrapper'''
     plotname = "steady_state_slab.png"
@@ -36,23 +48,19 @@ def main():
         plt.plot(x_values, flux, label=legend_title)
     plt.grid(which='major', axis='both')
     plt.legend()
-    plt.title("Steady State Slab")
+    #plt.title("Steady State Slab")
     plt.xlabel("x (cm)")
     plt.ylabel("Flux (1/cm^2-s-MeV)")
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
     plt.clf()
     plt.cla()
-    plt.close()
-    realname = "./out/last_realization.out"
-    x_values, flux = get_data(realname)
-    plt.plot(x_values, flux)
-    plt.grid(which='major', axis='both')
-    plt.title("Steady State Slab - Last Realization")
-    plt.xlabel("x (cm)")
-    plt.ylabel("Flux (1/cm^2-s-MeV)")
-    plt.savefig("./plots/lastreal.png")
-    print(f"Last realization saved")
+    realnames = ["./out/realization_1.out",
+                 "./out/realization_2.out",
+                 "./out/realization_3.out",
+                 "./out/last_realization.out"]
+    for realname in realnames:
+        realization_plot(realname)
 
 if __name__ == '__main__':
     main()

@@ -36,7 +36,7 @@ def main():
         plt.plot(x_values, flux, label=legend_title)
     plt.grid(which='major', axis='both')
     plt.legend()
-    plt.title("Steady State Slab")
+    #plt.title("Steady State Slab")
     plt.xlabel("x (cm)")
     plt.ylabel("Flux (1/cm^2-s-MeV)")
     plt.savefig(f"./plots/{plotname}")
