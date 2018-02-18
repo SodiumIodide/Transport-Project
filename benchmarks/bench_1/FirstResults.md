@@ -10,7 +10,7 @@ $\lambda$ | 99/100 | 11/100
 
 ## Results
 
-The exact values are those resulting from $1 \times 10^8$ realizations.
+The exact values are those resulting from $1 \times 10^8$ realizations, with the exception of the 10.0 thickness data, which is calculated for $1 \times 10^6$ realizations for expediency.
 
 The model values are those resulting from a convergence to $1 \times 10^{-9}$ percent error between iterations.
 
@@ -32,5 +32,5 @@ Transmission | 0.5950 | 0.6254 | 0.5887067 | 0.6273042
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.4342 | 0.3760 | 0.0 | 0.3771022
-Transmission | 0.0146 | 0.0259 | 0.0 | 0.0025975
+Reflection | 0.4342 | 0.3760 | 0.4411367 | 0.3771022
+Transmission | 0.0146 | 0.0259 | 0.0144818 | 0.0025975

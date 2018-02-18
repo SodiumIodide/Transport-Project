@@ -8,7 +8,7 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter_outer = int(1.0d+7, 8), &
+        num_iter_outer = int(1.0d+6, 8), &
         num_iter_inner = int(10000, 8), &
         seed = int(123456, 8)
     integer, parameter :: &

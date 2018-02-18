@@ -10,7 +10,7 @@ $\lambda$ | 101/20 | 101/20
 
 ## Results
 
-The exact values are those resulting from $1 \times 10^8$ realizations.
+The exact values are those resulting from $1 \times 10^8$ realizations, with the exception of the 10.0 thickness data, which is calculated for $1 \times 10^6$ realizations for expediency.
 
 The model values are those resulting from a convergence to $1 \times 10^{-9}$ percent error between iterations.
 
