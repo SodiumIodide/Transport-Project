@@ -20,7 +20,7 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 0.1d+0, &  ! cm
+        thickness = 1.0d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
         inner_tolerance = 1.0d-10, &
         outer_tolerance = 1.0d-6
