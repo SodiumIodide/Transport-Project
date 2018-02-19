@@ -8,7 +8,7 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter_outer = int(1.0d+6, 8), &
+        num_iter_outer = int(1.0d+8, 8), &
         num_iter_inner = int(10000, 8), &
         seed = int(123456, 8)
     integer, parameter :: &
@@ -20,14 +20,14 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 10.0d+0, &  ! cm
+        thickness = 0.1d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
         inner_tolerance = 1.0d-10, &
         outer_tolerance = 1.0d-6
 
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0 /), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0 /), &  ! 1/cm
         chord = (/dble(99)/dble(100), dble(11)/dble(100)/),&  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
