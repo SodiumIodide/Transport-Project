@@ -18,15 +18,15 @@ The model values are those resulting from a convergence to $1 \times 10^{-9}$ pe
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.0434 | 0.0432 | 0.0 | 0.0432892
-Transmission | 0.9388 | 0.9390 | 0.0 | 0.9418840
+Reflection | 0.0434 | 0.0432 | 0.0437743 | 0.0432892
+Transmission | 0.9388 | 0.9390 | 0.9413267 | 0.9418840
 
 ### Thickness = 1.0
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.1224 | 0.1068 | 0.0 | 0.1071105
-Transmission | 0.7233 | 0.7385 | 0.0 | 0.7407181
+Reflection | 0.1224 | 0.1068 | 0.1229169 | 0.1071105
+Transmission | 0.7233 | 0.7385 | 0.7239344 | 0.7407181
 
 ### Thickness = 10.0
 
