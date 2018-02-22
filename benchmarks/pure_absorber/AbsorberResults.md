@@ -1,4 +1,4 @@
-# Results of Ninth Benchmark
+# Results of Absorber Test
 
 ## Parameters Given
 
@@ -32,5 +32,5 @@ Transmission | 0.4751757 | 0.4756388
 
 Parameter | Calculated Exact | Calculated Model
 --- | --- | ---
-Reflection | 0.0 | 0.0000000
+Reflection | 0.000000 | 0.0000000
 Transmission | 0.0647808 | 0.0641339

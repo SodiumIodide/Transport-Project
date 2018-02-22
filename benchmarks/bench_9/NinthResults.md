@@ -1,11 +1,11 @@
-# Results of Eighth Benchmark
+# Results of Ninth Benchmark
 
 ## Parameters Given
 
 Parameter | Material 1 | Material 2
 --- | --- | ---
 $\sigma_t$ | 2/101 | 200/101
-$c$ | 1.00 | 0.00
+$c$ | 0.90 | 0.90
 $\lambda$ | 101/20 | 101/20
 
 ## Results
@@ -18,19 +18,19 @@ The model values are those resulting from a convergence to $1 \times 10^{-9}$ pe
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.0010 | 0.0010 | 0.0009837 | 0.0009831
-Transmission | 0.8509 | 0.8503 | 0.8529352 | 0.8529663
+Reflection | 0.0670 | 0.0669 | 0.0 | 0.0671334
+Transmission | 0.9136 | 0.9137 | 0.0 | 0.9165280
 
 ### Thickness = 1.0
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.0088 | 0.0085 | 0.0088579 | 0.0085012
-Transmission | 0.4818 | 0.4826 | 0.4836232 | 0.4840741
+Reflection | 0.2435 | 0.2381 | 0.0 | 0.2387994
+Transmission | 0.6045 | 0.6086 | 0.0 | 0.6104921
 
 ### Thickness = 10.0
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.0369 | 0.0243 | 0.0 | 0.0243775
-Transmission | 0.0766 | 0.0755 | 0.0 | 0.0756985
+Reflection | 0.4466 | 0.3272 | 0.0 | 0.3282107
+Transmission | 0.1037 | 0.1195 | 0.0 | 0.1198366

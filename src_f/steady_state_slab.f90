@@ -20,14 +20,14 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 1.0d-1, &  ! cm
+        thickness = 1.0d+0, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
         inner_tolerance = 1.0d-10, &
         outer_tolerance = 1.0d-6
 
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
-        scat_const = (/dble(2)/dble(101)*0.0d+0, dble(200)/dble(101)*1.0d+0 /), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.9d+0, dble(200)/dble(101)*0.9d+0 /), &  ! 1/cm
         chord = (/dble(101)/dble(20), dble(101)/dble(20)/),&  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
