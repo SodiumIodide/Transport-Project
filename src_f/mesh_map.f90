@@ -227,7 +227,7 @@ module mesh_map
                 struct_distance_tally = struct_distance_tally + struct_delta  ! cm
 
                 ! Carry over leftover distance
-                if (leftover_distance /= 0.0d+0) then
+                if (leftover_distance > 0.0d+0) then
                     ! If leftover distance is still over-reaching tally boundaries
                     if ((distance_tally + leftover_distance) >= struct_distance_tally) then
                         delta = struct_delta  ! cm
@@ -248,9 +248,8 @@ module mesh_map
                     unstruct_distance_tally = unstruct_distance_tally + unstruct_delta(counter)  ! cm
 
                     ! Material number for calculations
-                    material_num = materials(counter)
                     ! Tally switch for each material
-                    if (material_num == k) then
+                    if (materials(counter) == k) then
                         switch = 1.0d+0
                     else
                         switch = 0.0d+0
@@ -273,12 +272,13 @@ module mesh_map
                 end do  ! Unstructured loop
 
                 ! Average the results, or just append if no results previously
-                if (material_struct(i, k) == 0.0d+0) then
-                    material_struct(i, k) = weight_tally / struct_delta  ! unit
-                else if (weight_tally > 0.0d+0) then
-                    material_struct(i, k) = material_struct(i, k) + &
-                        (weight_tally / struct_delta - material_struct(i, k)) / dble(num_real)  ! unit
-                end if
+                material_struct(i, k) = material_struct(i, k) + (weight_tally / struct_delta)  ! unit
+                !if (material_struct(i, k) == 0.0d+0) then
+                !    material_struct(i, k) = weight_tally / struct_delta  ! unit
+                !else if (weight_tally > 0.0d+0) then
+                !    material_struct(i, k) = material_struct(i, k) + &
+                !        (weight_tally / struct_delta)! - material_struct(i, k)) / dble(num_real)  ! unit
+                !end if
             end do  ! Structured loop
         end do  ! Material loop
     end subroutine material_calc

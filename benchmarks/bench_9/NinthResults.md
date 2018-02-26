@@ -32,5 +32,12 @@ Transmission | 0.6045 | 0.6086 | 0.6061359 | 0.6104921
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
-Reflection | 0.4466 | 0.3272 | 0.0 | 0.3282107
-Transmission | 0.1037 | 0.1195 | 0.0 | 0.1198366
+Reflection | 0.4466 | 0.3272 | 0.4476624 | 0.3282107
+Transmission | 0.1037 | 0.1195 | 0.1042555 | 0.1198366
+
+Above calculated exact data is for $1 \times 10^6$ realizations. See following table for others.
+
+Number of Realizations | Calculated Exact Reflection | Calculated Exact Transmission
+--- | --- | ---
+$1 \times 10^7$ | 0.4477186 | 0.1042932
+$1 \times 10^8$ | 0.4477420 | 0.1042816

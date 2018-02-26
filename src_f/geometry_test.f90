@@ -1,6 +1,6 @@
 program geometry_test
     !use dynamic_arrays
-    !use mcnp_random
+    use mcnp_random
     use geometry_gen
 
     implicit none
@@ -13,15 +13,19 @@ program geometry_test
         thickness, chord_a, chord_b, cons_thickness!, rand_num, distance
     integer :: &
         num_cells, i
+    integer(8), parameter :: &
+        seed = int(123456, 8)
 
-    thickness = 0.1d+0  ! cm
+    thickness = 1.0d+1  ! cm
     cons_thickness = 0.0d+0  ! cm
-    chord_a =  dble(10)/dble(99) ! cm
-    chord_b = dble(100)/dble(11)  ! cm
+    chord_a =  dble(101)/dble(20) ! cm
+    chord_b = dble(101)/dble(20)  ! cm
     num_cells = 0
 
     allocate(x_dist(0))
     allocate(materials(0))
+
+    call RN_init_problem(seed, 1)
 
     call get_geometry(x_dist, x_arr, materials, chord_a, chord_b, thickness, num_cells)
 

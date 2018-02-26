@@ -8,8 +8,8 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter_outer = int(1.0d+8, 8), &
-        num_iter_inner = int(10000, 8), &
+        num_iter_outer = int(1.0d+6, 8), &
+        num_iter_inner = int(1.0d+6, 8), &
         seed = int(123456, 8)
     integer, parameter :: &
         num_cells = int(2.0d+2, 4), &
@@ -20,10 +20,9 @@ program steady_state_slab
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 1.0d-1, &  ! cm
+        thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
-        inner_tolerance = 1.0d-10, &
-        outer_tolerance = 1.0d-6
+        inner_tolerance = 1.0d-7
 
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
@@ -45,11 +44,11 @@ program steady_state_slab
     integer(8) :: &
         iterations_inner, iterations_outer
     integer :: &
-        i, c, m, k, num_ind_cells, material_num
+        i, c, m, k, num_ind_cells
     logical :: &
-        cont_calc_outer, cont_calc_inner, left_switch, right_switch
+        cont_calc_outer, cont_calc_inner, left_switch, right_switch, converged
     real(8) :: &
-        weighted_sum, err_inner, err_outer, total_chord, &
+        weighted_sum, err_inner, total_chord, &
         leakage_l, leakage_r, total_abs, balance_source_l, balance_source_r, &
         source_dist, balance
     real(8), dimension(num_cells) :: &
@@ -124,8 +123,6 @@ program steady_state_slab
 
     ! Outer loop over overall mixed system
     do while (cont_calc_outer)
-        phi_mat_old = phi_mat_new  ! 1/cm^2-s-MeV
-
         cont_calc_inner = .true.
         ! Start inner iterations at zero
         iterations_inner = int(0, 8)
@@ -179,14 +176,14 @@ program steady_state_slab
         end if
         allocate(phi_morph_new(num_ind_cells))
         phi_morph_new(:) = 1.0d+0
-!        call struct_to_unstruct(phi_new_outer, struct_thickness, num_cells, &
-!                                phi_morph_new, delta_x, num_ind_cells)
         if (allocated(phi_morph_old)) then
             deallocate(phi_morph_old)
         end if
         allocate(phi_morph_old(num_ind_cells))
         phi_morph_old(:) = 0.0d+0  ! 1/cm^2-s-MeV
 
+        ! Flag to tell whether to use the inner loop data in averaging or not
+        converged = .false.
         ! Inner loop over generated geometry
         do while (cont_calc_inner)
             phi_morph_old = phi_morph_new  ! 1/cm^2-s-MeV
@@ -201,8 +198,7 @@ program steady_state_slab
             ! First cell (left boundary)
             ! Ordinate loop, only consider the pos. ords for forward motion
             do m = (num_ords / 2 + 1), num_ords
-                material_num = materials(1)
-                psi(1, m) = (1.0d+0 + (macro_tot(material_num) * delta_x(1)) &
+                psi(1, m) = (1.0d+0 + (macro_tot(materials(1)) * delta_x(1)) &
                              / (2.0d+0 * dabs(mu(m))))**(-1) &
                             * (psi_bound_l(m) &
                                + (tot_source(1) * delta_x(1)) &
@@ -212,10 +208,9 @@ program steady_state_slab
             ! Rest of the cells (sans left bounding cell)
             do c = 2, num_ind_cells
                 do m = (num_ords / 2 + 1), num_ords
-                    material_num = materials(c)
                     ! Continuity of boundaries
                     psi_i_m(c, m) = psi_i_p(c - 1, m)
-                    psi(c, m) = (1.0d+0 + (macro_tot(material_num) * delta_x(c)) &
+                    psi(c, m) = (1.0d+0 + (macro_tot(materials(c)) * delta_x(c)) &
                                  / (2.0d+0 * dabs(mu(m))))**(-1) &
                                 * (psi_i_m(c, m) + (tot_source(c) &
                                                     * delta_x(c)) / (2.0d+0 * dabs(mu(m))))
@@ -227,8 +222,7 @@ program steady_state_slab
             ! First cell (right boundary)
             ! Ordinate loop, only consider neg. ords for backwards motion
             do m = 1, (num_ords / 2)
-                material_num = materials(num_ind_cells)
-                psi(num_ind_cells, m) = (1.0d+0 + (macro_tot(material_num) &
+                psi(num_ind_cells, m) = (1.0d+0 + (macro_tot(materials(num_ind_cells)) &
                                                    * delta_x(num_ind_cells)) &
                                          / (2.0d+0 * dabs(mu(m))))**(-1) &
                                         * (psi_bound_r(m) &
@@ -240,10 +234,9 @@ program steady_state_slab
             ! Rest of the cells (sans right bounding cell)
             do c = (num_ind_cells - 1), 1, -1
                 do m = 1, (num_ords / 2)
-                    material_num = materials(c)
                     ! Continuation of boundaries
                     psi_i_p(c, m) = psi_i_m(c + 1, m)
-                    psi(c, m) = (1.0d+0 + (macro_tot(material_num) * delta_x(c)) &
+                    psi(c, m) = (1.0d+0 + (macro_tot(materials(c)) * delta_x(c)) &
                                  / (2.0d+0 * dabs(mu(m))))**(-1) &
                                 * (psi_i_p(c, m) + (tot_source(c) &
                                                     * delta_x(c)) / (2.0d+0 * dabs(mu(m))))
@@ -265,10 +258,12 @@ program steady_state_slab
             err_inner = maxval(dabs((phi_morph_old - phi_morph_new)) / phi_morph_new)
             if (err_inner <= inner_tolerance) then
                 cont_calc_inner = .false.
+                converged = .true.
             else if (iterations_inner > num_iter_inner) then
                 cont_calc_inner = .false.
                 print *, "No convergence on inner loop number ", iterations_outer, &
-                         ": quit after maximum ", iterations_inner, " iterations"
+                         ": quit after maximum ", iterations_inner, &
+                         " iterations; data will not be used"
             end if
         end do  ! Inner loop
 
@@ -318,141 +313,108 @@ program steady_state_slab
             print *, "Balance (source - loss) is ", balance
         end if
 
-        iterations_outer = iterations_outer + int(1, 8)
+        if (converged) then
+            iterations_outer = iterations_outer + int(1, 8)
 
-        ! Obtain material balances
-        ! Average flux in structured cells
-        call material_calc(phi_morph_new, delta_x, num_ind_cells, materials, phi_mat_new, &
-                           struct_thickness, num_cells, num_materials, iterations_outer)
-        ! Average leakage from material boundaries (for balance/tally purposes)
-        do k = 1, num_materials
-            ! Adjust the left switch
-            if (materials(1) == k) then
-                left_switch = .true.
-            else
-                left_switch = .false.
-            end if
-            ! Adjust the right switch
-            if (materials(num_ind_cells) == k) then
-                right_switch = .true.
-            else
-                right_switch = .false.
-            end if
-            ! Calculate the average negative leakage from left boundary
-            if (left_switch) then
-                do m = 1, (num_ords / 2)
-                    ! Don't weight the initial zero
-                    if (psi_mat_leak_l(m, k) == 0.0d+0) then
-                        psi_mat_leak_l(m, k) = psi_i_m(1, m)
-                    else
-                        psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) &
-                            + (psi_i_m(1, m) - psi_mat_leak_l(m, k)) / dble(iterations_outer)
-                    end if
-                end do
-            end if
-            ! Calculate the average positive leakage from right boundary
-            if (right_switch) then
-                do m = (num_ords / 2 + 1), num_ords
-                    ! Don't weight the initial zero
-                    if (psi_mat_leak_r(m, k) == 0.0d+0) then
-                        psi_mat_leak_r(m, k) = psi_i_p(num_ind_cells, m)
-                    else
-                        psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) &
-                            + (psi_i_p(num_ind_cells, m) - psi_mat_leak_r(m, k)) / dble(iterations_outer)
-                    end if
-                end do
-            end if
-        end do
+            ! Obtain material balances
+            ! Average flux in structured cells
+            call material_calc(phi_morph_new, delta_x, num_ind_cells, materials, phi_mat_new, &
+                            struct_thickness, num_cells, num_materials, iterations_outer)
+            ! Average leakage from material boundaries (for balance/tally purposes)
+            do k = 1, num_materials
+                ! Adjust the left switch
+                if (materials(1) == k) then
+                    left_switch = .true.
+                else
+                    left_switch = .false.
+                end if
+                ! Adjust the right switch
+                if (materials(num_ind_cells) == k) then
+                    right_switch = .true.
+                else
+                    right_switch = .false.
+                end if
+                ! Calculate the average negative leakage from left boundary
+                if (left_switch) then
+                    do m = 1, (num_ords / 2)
+                        ! Don't weight the initial zero
+                        if (psi_mat_leak_l(m, k) == 0.0d+0) then
+                            psi_mat_leak_l(m, k) = psi_i_m(1, m)
+                        else
+                            psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) &
+                                + (psi_i_m(1, m) - psi_mat_leak_l(m, k)) / dble(iterations_outer)
+                        end if
+                    end do
+                end if
+                ! Calculate the average positive leakage from right boundary
+                if (right_switch) then
+                    do m = (num_ords / 2 + 1), num_ords
+                        ! Don't weight the initial zero
+                        if (psi_mat_leak_r(m, k) == 0.0d+0) then
+                            psi_mat_leak_r(m, k) = psi_i_p(num_ind_cells, m)
+                        else
+                            psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) &
+                                + (psi_i_p(num_ind_cells, m) - psi_mat_leak_r(m, k)) / dble(iterations_outer)
+                        end if
+                    end do
+                end if
+            end do
 
-        if (mod(iterations_outer, 1000) == 0) then
-            print *, "Realization number ", iterations_outer
-        end if
+            if (mod(iterations_outer, 1000) == 0) then
+                print *, "Realization number ", iterations_outer
+            end if
 
         ! Save the first few realizations
-        if (iterations_outer < 4) then
-            phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
-            ! Map the final realization onto phi_real
-            call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
-            ! Write the realization to an output file
-            write(filename, "(A18,I1,A4)") "./out/realization_", iterations_outer, ".out"
-            open(unit=7, file=filename, form="formatted", status="replace", action="write")
-            do i = 1, num_cells
-                write(7,*) cell_vector(i), phi_real(i)
-            end do
-            close(7)
-        end if
+            if (iterations_outer < 4) then
+                phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
+                ! Map the final realization onto phi_real
+                call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
+                ! Write the realization to an output file
+                write(filename, "(A18,I1,A4)") "./out/realization_", iterations_outer, ".out"
+                open(unit=7, file=filename, form="formatted", status="replace", action="write")
+                do i = 1, num_cells
+                    write(7,*) cell_vector(i), phi_real(i)
+                end do
+                close(7)
+            end if
 
-        ! Map the unstructured phi onto the structured phi
-        !call unstruct_to_struct(phi_morph_new, delta_x, phi_real, struct_thickness, num_cells)
-
-        ! Relative error for outer loop
-        !err_outer = maxval(dabs((phi_mat_new - phi_mat_old)) / phi_mat_new)
-        !if (err_outer <= outer_tolerance) then
-        !    cont_calc_outer = .false.
-        !    print *, "Quit after ", iterations_outer , " outer iterations"
-        !else if (iterations_outer > num_iter_outer) then
-        !    cont_calc_outer = .false.
-        !    print *, "No convergence on outer loop: quit after maximum ", iterations_outer, " outer iterations"
-        !end if
-        if (iterations_outer > num_iter_outer) then
-            cont_calc_outer = .false.
-        end if
-
-        ! Force at least 1000 calculations for outer loop in the case of long
-        ! chord lengths relative to the geometry thickness
-        !if (iterations_outer < 1000) then
-        !    cont_calc_outer = .true.
-        !end if
+            if (iterations_outer > num_iter_outer) then
+                cont_calc_outer = .false.
+            end if
+        end if  ! Logical test for inner convergence: don't average nonconverged samples
     end do  ! Outer loop
 
     ! Print the final realization onto phi_real for plotting purposes
     phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
     call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
 
+    ! Normalize the resulting arrays
+    do k = 1, num_materials
+        !do m = 1, num_ords
+        !    psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) / dble(num_iter_outer)
+        !    psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) / dble(num_iter_outer)
+        !end do
+        do c = 1, num_cells
+            phi_mat_new(c, k) = phi_mat_new(c, k) / dble(num_iter_outer)
+        end do
+    end do
+
     ! Check balances outer loop
     leakage_l = 0.0d+0
     leakage_r = 0.0d+0
-    total_abs = 0.0d+0
-    balance_source_l = 0.0d+0
-    balance_source_r = 0.0d+0
-    source_dist = 0.0d+0
-    ! Tally the boundary sources (currents)
-    do m = 1, (num_ords / 2)
-        balance_source_r = balance_source_r + weights(m) * dabs(mu(m)) * psi_bound_r(m)
-    end do
-    do m = (num_ords / 2 + 1), num_ords
-        balance_source_l = balance_source_l + weights(m) * dabs(mu(m)) * psi_bound_l(m)
-    end do
-    ! Tally the overall losses due to leakage and absorption, as well as the distributed source
-    do c = 1, num_cells
-        do k = 1, num_materials
-            ! Leakage in neg. direction from left face
-            if (c == 1) then
-                do m = 1, (num_ords / 2)
-                    leakage_l = leakage_l + dabs(mu(m)) * weights(m) * prob(k) * psi_mat_leak_l(m, k)
-                end do
-            ! Leakage in pos. direction from right face
-            else if (c == num_cells) then
-                do m = (num_ords / 2 + 1), num_ords
-                    leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_mat_leak_r(m, k)
-                end do
-            end if
-            ! Total absorption in system
-            !total_abs = total_abs + (macro_tot(k) - macro_scat(k)) * struct_thickness * prob(k) * phi_real(c)
-            ! Distributed source
-            !source_dist = source_dist + spont_source(k) * struct_thickness * prob(k)
+    ! Tally the overall losses due to refleciton and transmission
+    do k = 1, num_materials
+        ! Leakage in neg. direction from left face
+        do m = 1, (num_ords / 2)
+            leakage_l = leakage_l + dabs(mu(m)) * weights(m) * prob(k) * psi_mat_leak_l(m, k)
+        end do
+        ! Leakage in pos. direction from right face
+        do m = (num_ords / 2 + 1), num_ords
+            leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_mat_leak_r(m, k)
         end do
     end do
     print *, "Reflection on left: ", leakage_l
     print *, "Transmission on right: ", leakage_r
-    !print *, "Source left: ", balance_source_l
-    !print *, "Source right: ", balance_source_r
-    !print *, "Distributed source: ", source_dist
-    !print *, "Absorption loss: ", total_abs
-    !print *, "Source is ", balance_source_l + balance_source_r + source_dist
-    !print *, "Loss is ", leakage_l + leakage_r + total_abs
-    !balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
-    !print *, "Balance (source - loss) is ", balance
 
     ! Create plot
     open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
