@@ -199,7 +199,7 @@ module mesh_map
         real(8), dimension(struct_size, num_materials), intent(out) :: &
             material_struct
         integer :: &
-            i, k, counter, material_num
+            i, k, counter
         real(8) :: &
             distance_tally, unstruct_distance_tally, struct_distance_tally, weight_tally, delta, leftover_distance, switch
         logical :: &
@@ -272,13 +272,13 @@ module mesh_map
                 end do  ! Unstructured loop
 
                 ! Average the results, or just append if no results previously
-                material_struct(i, k) = material_struct(i, k) + (weight_tally / struct_delta)  ! unit
-                !if (material_struct(i, k) == 0.0d+0) then
-                !    material_struct(i, k) = weight_tally / struct_delta  ! unit
-                !else if (weight_tally > 0.0d+0) then
-                !    material_struct(i, k) = material_struct(i, k) + &
-                !        (weight_tally / struct_delta)! - material_struct(i, k)) / dble(num_real)  ! unit
-                !end if
+                !material_struct(i, k) = material_struct(i, k) + (weight_tally / struct_delta)  ! unit
+                if (material_struct(i, k) == 0.0d+0) then
+                    material_struct(i, k) = weight_tally / struct_delta  ! unit
+                else if (weight_tally > 0.0d+0) then
+                    material_struct(i, k) = material_struct(i, k) + &
+                        (weight_tally / struct_delta - material_struct(i, k)) / dble(num_real)  ! unit
+                end if
             end do  ! Structured loop
         end do  ! Material loop
     end subroutine material_calc

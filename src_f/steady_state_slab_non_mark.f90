@@ -66,10 +66,10 @@ program steady_state_slab_non_mark
 
     ! Boundary conditions: 1/cm^2-s-MeV-strad
     ! Left boundary
-    !psi_bound_l(:) = 1.0d+0  ! Isotropic source
-    psi_bound_l(:) = 0.0d+0  ! Vacuum
+    psi_bound_l(:) = 2.0d+0  ! Isotropic source
+    !psi_bound_l(:) = 0.0d+0  ! Vacuum
     ! Beam source (in conj. with vacuum):
-    psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
+    !psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
 
     ! Right boundary
     !psi_bound_r(:) = 1.0d+0  ! Isotropic source

@@ -16,6 +16,7 @@ my @FILES = qw/
     steady_state_slab.f90
 /;
 my $EXEC_NAME = "steady_state_slab.exe";
+my $OPT_LEVEL = 3;
 
 sub main {
     print "Compiling using $COMPILER...\n";
@@ -25,7 +26,7 @@ sub main {
     # Compile individual objects
     foreach my $src_name (@FILES) {
         my $obj_name = $src_name =~ s/\.f90/\.o/r;
-        comp("$COMPILER -c $SRC/$src_name -o $BIN/$obj_name");
+        comp("$COMPILER -c $SRC/$src_name -o $BIN/$obj_name -O$OPT_LEVEL");
         $obj_string = $obj_string . " $BIN/" . $obj_name;
     }
 

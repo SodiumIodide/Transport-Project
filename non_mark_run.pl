@@ -9,7 +9,7 @@ my $EXEC_NAME = "steady_state_slab_non_mark.exe";
 sub main() {
     print "Running $EXEC_NAME...\n";
     system "./bin/$EXEC_NAME";
-    system "python ./src_py/plot.py";
+    system "python ./src_py/non_mark_plot.py";
     print "Done\n";
 }
 

@@ -26,7 +26,7 @@ program steady_state_slab
 
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
-        scat_const = (/dble(2)/dble(101)*0.9d+0, dble(200)/dble(101)*0.9d+0 /), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*1.0d+0, dble(200)/dble(101)*0.0d+0 /), &  ! 1/cm
         chord = (/dble(101)/dble(20), dble(101)/dble(20)/),&  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
@@ -389,17 +389,13 @@ program steady_state_slab
     call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
 
     ! Normalize the resulting arrays
-    do k = 1, num_materials
-        !do m = 1, num_ords
-        !    psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) / dble(num_iter_outer)
-        !    psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) / dble(num_iter_outer)
-        !end do
-        do c = 1, num_cells
-            phi_mat_new(c, k) = phi_mat_new(c, k) / dble(num_iter_outer)
-        end do
-    end do
+    !do k = 1, num_materials
+    !    do c = 1, num_cells
+    !        phi_mat_new(c, k) = phi_mat_new(c, k) / dble(num_iter_outer)
+    !    end do
+    !end do
 
-    ! Check balances outer loop
+    ! Calculate outer loop reflection and transmission
     leakage_l = 0.0d+0
     leakage_r = 0.0d+0
     ! Tally the overall losses due to refleciton and transmission
@@ -440,12 +436,28 @@ program steady_state_slab
     close(10)
 
     ! Deallocate all variable-width unstructured arrays
-    deallocate(psi)
-    deallocate(psi_i_p)
-    deallocate(psi_i_m)
-    deallocate(scat_source)
-    deallocate(spont_source)
-    deallocate(tot_source)
-    deallocate(phi_morph_old)
-    deallocate(phi_morph_new)
+    if (allocated(psi)) then
+        deallocate(psi)
+    end if
+    if (allocated(psi_i_p)) then
+        deallocate(psi_i_p)
+    end if
+    if (allocated(psi_i_m)) then
+        deallocate(psi_i_m)
+    end if
+    if (allocated(scat_source)) then
+        deallocate(scat_source)
+    end if
+    if (allocated(spont_source)) then
+        deallocate(spont_source)
+    end if
+    if (allocated(tot_source)) then
+        deallocate(tot_source)
+    end if
+    if (allocated(phi_morph_old)) then
+        deallocate(phi_morph_old)
+    end if
+    if (allocated(phi_morph_new)) then
+        deallocate(phi_morph_new)
+    end if
 end program steady_state_slab
