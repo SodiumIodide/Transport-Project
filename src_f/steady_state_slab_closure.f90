@@ -18,9 +18,9 @@ program steady_state_slab_closure
 
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
-        tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
-        scat_const = (/dble(2)/dble(101)*0.0d+0, dble(200)/dble(101)*0.0d+0/), &  ! 1/cm
-        chord = (/dble(101)/dble(20), dble(101)/dble(20)/)  ! cm
+        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0/), &  ! 1/cm
+        chord = (/dble(99)/dble(10), dble(11)/dble(10)/)  ! cm
     real(8), dimension(num_materials) :: &
         prob
 
@@ -38,8 +38,8 @@ program steady_state_slab_closure
     logical :: &
         cont_calc_inner, cont_calc_outer
     real(8) :: &
-        tolerance_inner, tolerance_outer, weighted_sum, err, total_abs, total_chord, &
-        leakage_l, leakage_r, balance_source_l, balance_source_r, source_dist, balance
+        tolerance_inner, tolerance_outer, weighted_sum, err, total_chord, &
+        leakage_l, leakage_r
     real(8), dimension(num_cells) :: &
         phi_new_outer, phi_old_outer, scat_source, tot_source
     real(8), dimension(num_cells, num_materials) :: &
@@ -243,47 +243,19 @@ program steady_state_slab_closure
     ! Check balances
     leakage_l = 0.0d+0
     leakage_r = 0.0d+0
-    total_abs = 0.0d+0
-    balance_source_l = 0.0d+0
-    balance_source_r = 0.0d+0
-    source_dist = 0.0d+0
-    ! Tally the boundary sources (currents)
-    do m = 1, (num_ords / 2)
-        balance_source_r = balance_source_r + weights(m) * dabs(mu(m)) * psi_bound_r(m)
-    end do
-    do m = (num_ords / 2 + 1), num_ords
-        balance_source_l = balance_source_l + weights(m) * dabs(mu(m)) * psi_bound_l(m)
-    end do
     ! Tally the overall losses due to leakage and absorption, as well as the distributed source
-    do c = 1, num_cells
-        do k = 1, num_materials
-            ! Leakage in neg. direction from left face
-            if (c == 1) then
-                do m = 1, (num_ords / 2)
-                    leakage_l = leakage_l + dabs(mu(m)) * weights(m) * prob(k) * psi_i_m(c, m, k)
-                end do
-            ! Leakage in pos. direction from right face
-            else if (c == num_cells) then
-                do m = (num_ords / 2 + 1), num_ords
-                    leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_i_p(c, m, k)
-                end do
-            end if
-            ! Total absorption in system
-            total_abs = total_abs + (macro_tot(c, k) - macro_scat(c, k)) * delta_x(c) * prob(k) * phi_new_inner(c, k)
-            ! Distributed source
-            source_dist = source_dist + spont_source(c, k) * delta_x(c) * prob(k)
+    do k = 1, num_materials
+        ! Leakage in neg. direction from left face
+        do m = 1, (num_ords / 2)
+            leakage_l = leakage_l + dabs(mu(m)) * weights(m) * prob(k) * psi_i_m(1, m, k)
+        end do
+        ! Leakage in pos. direction from right face
+        do m = (num_ords / 2 + 1), num_ords
+            leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_i_p(num_cells, m, k)
         end do
     end do
     print *, "Reflection from left: ", leakage_l
     print *, "Transmission on right: ", leakage_r
-    !print *, "Source left: ", balance_source_l
-    !print *, "Source right: ", balance_source_r
-    !print *, "Distributed source: ", source_dist
-    !print *, "Absorption loss: ", total_abs
-    !print *, "Source is ", balance_source_l + balance_source_r + source_dist
-    !print *, "Loss is ", leakage_l + leakage_r + total_abs
-    !balance = balance_source_l + balance_source_r + source_dist - leakage_l - leakage_r - total_abs
-    !print *, "Balance (source - loss) is ", balance
 
     ! Create plot
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
