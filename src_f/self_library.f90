@@ -4,6 +4,7 @@ module self_library
         legendre_gauss_quad, &
         linspace, &
         gauleg, &
+        histogram_add, &
         PI
 
     real(8), parameter :: &

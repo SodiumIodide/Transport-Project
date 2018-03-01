@@ -18,10 +18,10 @@ program steady_state_slab
         histogram_points = int(1.0d+2, 4)
     logical, parameter :: &
         tally = .false., &
-        make_histogram = .false.
+        make_histogram = .true.
     real(8), parameter :: &
         histogram_min = 0.0d+0, &
-        histogram_max = 0.0d+0
+        histogram_max = 1.0d+0
 
     ! Material properties
     real(8), parameter :: &
@@ -31,7 +31,7 @@ program steady_state_slab
         histogram_delta = 1.0+0 / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*1.0d+0, dble(100)/dble(11)*0.0d+0/), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
         chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
@@ -406,7 +406,7 @@ program steady_state_slab
                         leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_i_m(num_ind_cells, m)
                     end do
                 end do
-                
+
                 ! Append to histograms
                 call histogram_add(trans_histogram, histogram_array, histogram_points, leakage_r)
                 call histogram_add(refl_histogram, histogram_array, histogram_points, leakage_l)

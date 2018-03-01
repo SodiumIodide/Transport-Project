@@ -57,6 +57,8 @@ program steady_state_slab_closure
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
         cell_vector
+    character(:), allocatable :: &
+        filename
 
     ! Assigment of material parameters
     delta_x(:) = thickness / dble(num_cells)  ! cm
@@ -272,22 +274,41 @@ program steady_state_slab_closure
 
     ! Create plot
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
-    open(unit=7, file="./out/steady_state_slab_closure.out", form="formatted", &
+    if (use_alpha) then
+        filename = "./out/steady_state_slab_closure_alpha.out"
+    else
+        filename = "./out/steady_state_slab_closure.out"
+    end if
+    open(unit=7, file=filename, form="formatted", &
          status="replace", action="write")
     do i = 1, num_cells
         write(7, *) cell_vector(i), phi_new_outer(i)
     end do
     close(7)
-    open(unit=8, file="./out/steady_state_slab_closure_1.out", form="formatted", &
+    if (use_alpha) then
+        filename = "./out/steady_state_slab_closure_alpha_1.out"
+    else
+        filename = "./out/steady_state_slab_closure_1.out"
+    end if
+    open(unit=8, file=filename, form="formatted", &
          status="replace", action="write")
     do i = 1, num_cells
         write(8, *) cell_vector(i), phi_new_inner(i, 1)
     end do
     close(8)
-    open(unit=9, file="./out/steady_state_slab_closure_2.out", form="formatted", &
+    if (use_alpha) then
+        filename = "./out/steady_state_slab_closure_alpha_2.out"
+    else
+        filename = "./out/steady_state_slab_closure_2.out"
+    end if
+    open(unit=9, file=filename, form="formatted", &
          status="replace", action="write")
     do i = 1, num_cells
         write(9, *) cell_vector(i), phi_new_inner(i, 2)
     end do
     close(9)
+
+    if (allocated(filename)) then
+        deallocate(filename)
+    end if
 end program steady_state_slab_closure
