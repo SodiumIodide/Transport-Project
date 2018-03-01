@@ -33,6 +33,25 @@ def realization_plot(realname):
     plt.clf()
     plt.cla()
 
+def hist_plot(histname):
+    '''Plot of a reflection or transmission PDF histogram'''
+    if "refl" in histname:
+        label = "Reflection"
+    else:
+        label = "Transmission"
+    plotname = histname.replace("out", "plots").replace(".plots", ".png")
+    prob, num = get_data(histname)
+    # Trim zero values here
+    prob = np.array([p for i, p in enumerate(prob) if num[i] != 0])
+    num = np.array([n for n in num if n != 0])
+    plt.plot(prob, num)
+    plt.xlim(xmin=0.0)
+    plt.xlabel(f"Percentage of {label}")
+    plt.ylabel(f"Probability of {label}")
+    plt.savefig(plotname)
+    plt.clf()
+    plt.cla()
+
 def main():
     '''Main wrapper'''
     plotname = "steady_state_slab.png"
@@ -61,6 +80,10 @@ def main():
                  "./out/last_realization.out"]
     for realname in realnames:
         realization_plot(realname)
+    histnames = ["./out/trans_histogram.out",
+                 "./out/refl_histogram.out"]
+    for histname in histnames:
+        hist_plot(histname)
 
 if __name__ == '__main__':
     main()

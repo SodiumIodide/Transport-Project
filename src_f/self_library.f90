@@ -129,4 +129,35 @@ module self_library
             end do
         end do
     end subroutine mat_diff
+
+    subroutine histogram_add(histogram, histogram_array, histogram_points, value)
+        implicit none
+
+        integer, intent(in) :: &
+            histogram_points
+        real(8), intent(in) :: &
+            value
+        real(8), dimension(histogram_points), intent(in) :: &
+            histogram_array
+        integer(8), dimension(histogram_points), intent(inout) :: &
+            histogram
+        integer :: &
+            i
+        logical :: &
+            data_inserted
+
+        data_inserted = .false.
+        i = 1
+        do while ((.not. data_inserted) .and. (i < histogram_points - 1))
+            if (histogram_array(i + 1) > value) then
+                histogram(i) = histogram(i) + int(1, 8)
+                data_inserted = .true.
+            end if
+            i = i + 1
+        end do
+        if (.not. data_inserted) then
+            print *, "Data not valid histogram entry"
+            call exit(1)
+        end if
+    end subroutine histogram_add
 end module self_library

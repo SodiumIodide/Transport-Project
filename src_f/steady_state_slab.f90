@@ -14,20 +14,25 @@ program steady_state_slab
     integer, parameter :: &
         num_cells = int(2.0d+2, 4), &
         num_ords = int(16, 4), &
-        num_materials = int(2, 4)
+        num_materials = int(2, 4), &
+        histogram_points = int(1.0d+2, 4)
     logical, parameter :: &
-        tally = .false.
+        tally = .false., &
+        make_histogram = .false.
+    real(8), parameter :: &
+        histogram_min = 0.0d+0, &
+        histogram_max = 0.0d+0
 
     ! Material properties
     real(8), parameter :: &
         thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
-        inner_tolerance = 1.0d-7
-
+        inner_tolerance = 1.0d-7, &
+        histogram_delta = 1.0+0 / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
-        chord = (/dble(99)/dble(10), dble(11)/dble(10)/), &  ! cm
+        scat_const = (/dble(10)/dble(99)*1.0d+0, dble(100)/dble(11)*0.0d+0/), &  ! 1/cm
+        chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables
@@ -71,6 +76,10 @@ program steady_state_slab
         cell_vector
     character(len=1024) :: &
         filename
+    integer(8), dimension(histogram_points) :: &
+        trans_histogram, refl_histogram
+    real(8), dimension(histogram_points) :: &
+        pdf_trans_histogram, pdf_refl_histogram, histogram_array
 
     ! Assigment of material variables
     macro_tot = tot_const  ! 1/cm
@@ -85,6 +94,11 @@ program steady_state_slab
     prob = chord / total_chord
     psi_mat_leak_l(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
     psi_mat_leak_r(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
+    ! Histograms
+    trans_histogram(:) = 0
+    refl_histogram(:) = 0
+    pdf_trans_histogram(:) = 0.0d+0
+    pdf_refl_histogram(:) = 0.0d+0
     ! Tally averages for boundary leakage
     left_switch = .false.
     right_switch = .false.
@@ -94,6 +108,8 @@ program steady_state_slab
 
     ! X values of flux for plotting
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
+    ! Histogram values
+    call linspace(histogram_array, histogram_min, histogram_max, histogram_points)
 
     ! Legendre Gauss Quadrature values over chosen ordinates
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
@@ -364,7 +380,7 @@ program steady_state_slab
                 print *, "Realization number ", iterations_outer
             end if
 
-        ! Save the first few realizations
+            ! Save the first few realizations
             if (iterations_outer < 4) then
                 phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
                 ! Map the final realization onto phi_real
@@ -378,6 +394,24 @@ program steady_state_slab
                 close(7)
             end if
 
+            if (make_histogram) then
+                ! Update probability density functions
+                leakage_l = 0.0d+0
+                leakage_r = 0.0d+0
+                do k = 1, num_materials
+                    do m = 1, (num_ords / 2)
+                        leakage_l = leakage_l + dabs(mu(m)) * weights(m) * prob(k) * psi_i_m(1, m)
+                    end do
+                    do m = (num_ords / 2 + 1), num_ords
+                        leakage_r = leakage_r + dabs(mu(m)) * weights(m) * prob(k) * psi_i_m(num_ind_cells, m)
+                    end do
+                end do
+                
+                ! Append to histograms
+                call histogram_add(trans_histogram, histogram_array, histogram_points, leakage_r)
+                call histogram_add(refl_histogram, histogram_array, histogram_points, leakage_l)
+            end if
+
             if (iterations_outer > num_iter_outer) then
                 cont_calc_outer = .false.
             end if
@@ -387,13 +421,6 @@ program steady_state_slab
     ! Print the final realization onto phi_real for plotting purposes
     phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV
     call unstruct_to_struct(phi_morph_new, delta_x, num_ind_cells, phi_real, struct_thickness, num_cells)
-
-    ! Normalize the resulting arrays
-    !do k = 1, num_materials
-    !    do c = 1, num_cells
-    !        phi_mat_new(c, k) = phi_mat_new(c, k) / dble(num_iter_outer)
-    !    end do
-    !end do
 
     ! Calculate outer loop reflection and transmission
     leakage_l = 0.0d+0
@@ -434,6 +461,24 @@ program steady_state_slab
     close(8)
     close(9)
     close(10)
+
+    ! Create histogram data
+    if (make_histogram) then
+        do i = 1, histogram_points
+            pdf_trans_histogram(i) = dble(trans_histogram(i)) / dble(num_iter_outer) / histogram_delta
+            pdf_refl_histogram(i) = dble(refl_histogram(i)) / dble(num_iter_outer) / histogram_delta
+        end do
+        open(unit=11, file="./out/trans_histogram.out", form="formatted", &
+             status="replace", action="write")
+        open(unit=12, file="./out/refl_histogram.out", form="formatted", &
+             status="replace", action="write")
+        do i = 1, histogram_points
+            write(11,*) histogram_array(i), pdf_trans_histogram(i)
+            write(12,*) histogram_array(i), pdf_refl_histogram(i)
+        end do
+        close(11)
+        close(12)
+    end if
 
     ! Deallocate all variable-width unstructured arrays
     if (allocated(psi)) then

@@ -33,4 +33,4 @@ Transmission | 0.5950 | 0.6254 | 0.5887067 | 0.6273042
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
 --- | --- | --- | --- | ---
 Reflection | 0.4342 | 0.3760 | 0.4411367 | 0.3771022
-Transmission | 0.0146 | 0.0259 | 0.0144818 | 0.0025975
+Transmission | 0.0146 | 0.0259 | 0.0144818 | 0.0259773

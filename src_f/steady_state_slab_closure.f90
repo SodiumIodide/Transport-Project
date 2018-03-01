@@ -11,6 +11,8 @@ program steady_state_slab_closure
         num_ords = 16, &
         num_cells = int(5.0d+2, 4), &
         num_materials = 2
+    logical, parameter :: &
+        use_alpha = .true.
 
     ! Material properties
     real(8), parameter :: &
@@ -19,8 +21,9 @@ program steady_state_slab_closure
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
-        chord = (/dble(99)/dble(10), dble(11)/dble(10)/)  ! cm
+        scat_const = (/dble(10)/dble(99)*0.99d+0, dble(100)/dble(11)*0.99d+0/), &  ! 1/cm
+        abs_const = tot_const - scat_const, &  ! 1/cm
+        chord = (/dble(99)/dble(100), dble(11)/dble(100)/)  ! cm
     real(8), dimension(num_materials) :: &
         prob
 
@@ -39,7 +42,7 @@ program steady_state_slab_closure
         cont_calc_inner, cont_calc_outer
     real(8) :: &
         tolerance_inner, tolerance_outer, weighted_sum, err, total_chord, &
-        leakage_l, leakage_r
+        leakage_l, leakage_r, alpha, sig_a_av, sig_t_av
     real(8), dimension(num_cells) :: &
         phi_new_outer, phi_old_outer, scat_source, tot_source
     real(8), dimension(num_cells, num_materials) :: &
@@ -73,6 +76,16 @@ program steady_state_slab_closure
         total_chord = total_chord + chord(k)  ! cm
     end do
     prob(:) = chord(:) / total_chord
+    sig_a_av = prob(1) * abs_const(1) + prob(2) * abs_const(2)
+    sig_t_av = prob(1) * tot_const(1) + prob(2) * tot_const(2)
+    if (use_alpha) then
+        alpha = dsqrt(sig_a_av * sig_t_av) &
+            * (sig_a_av * (tot_const(2) - tot_const(1))**2 + sig_t_av * (abs_const(2) - abs_const(1))**2) &
+            / ((sig_a_av * (tot_const(2) - tot_const(1)))**2 + (sig_t_av * (abs_const(2) - abs_const(1)))**2)
+    else
+        alpha = 1.0d+0
+    end if
+    print *, "Alpha: ", alpha
 
     ! Legendre Gauss Quadrature values
     call legendre_gauss_quad(num_ords, -1.0d+0, 1.0d+0, ordinates, weights)
@@ -134,11 +147,11 @@ program steady_state_slab_closure
             ! Ordinate loop, only consider the pos. ords for forward motion
             do m = (num_ords / 2 + 1), num_ords
                 psi(1, m, material_num) = (1.0d+0 + (macro_tot(1, material_num) * delta_x(1)) &
-                    / (2.0d+0 * dabs(mu(m))) + delta_x(1) &
+                    / (2.0d+0 * dabs(mu(m))) + alpha * delta_x(1) &
                     / (2.0d+0 * chord(material_num)))**(-1) &
                     * (psi_bound_l(m) + (tot_source(1) * delta_x(1)) &
                     / (2.0d+0 * dabs(mu(m))) &
-                    + (delta_x(1) * prob(material_off_num) * psi(1, m, material_off_num)) &
+                    + (delta_x(1) * alpha * prob(material_off_num) * psi(1, m, material_off_num)) &
                     / (2.0d+0 * prob(material_num) * chord(material_off_num)))
                 psi_i_p(1, m, material_num) = 2.0d+0 * psi(1, m, material_num) - psi_bound_l(m)
             end do
@@ -148,11 +161,11 @@ program steady_state_slab_closure
                     ! Continuity of boundaries
                     psi_i_m(c, m, material_num) = psi_i_p(c - 1, m, material_num)
                     psi(c, m, material_num) = (1.0d+0 + (macro_tot(c, material_num) * delta_x(c)) &
-                        / (2.0d+0 * dabs(mu(m))) + delta_x(c) &
+                        / (2.0d+0 * dabs(mu(m))) + alpha * delta_x(c) &
                         / (2.0d+0 * chord(material_num)))**(-1) &
                         * (psi_i_m(c, m, material_num) + (tot_source(c) * delta_x(c)) &
                         / (2.0d+0 * dabs(mu(m))) &
-                        + (delta_x(c) * prob(material_off_num) * psi(c, m, material_off_num)) &
+                        + (delta_x(c) * alpha * prob(material_off_num) * psi(c, m, material_off_num)) &
                         / (2.0d+0 * prob(material_num) * chord(material_off_num)))
                     psi_i_p(c, m, material_num) = 2.0d+0 * psi(c, m, material_num) - psi_i_m(c, m, material_num)
                 end do
@@ -163,11 +176,11 @@ program steady_state_slab_closure
             ! Ordinate loop, only consider neg. ords for backwards motion
             do m = 1, (num_ords / 2)
                 psi(num_cells, m, material_num) = (1.0d+0 + (macro_tot(num_cells, material_num) * delta_x(num_cells)) &
-                    / (2.0d+0 * dabs(mu(m))) + delta_x(num_cells) &
+                    / (2.0d+0 * dabs(mu(m))) + alpha * delta_x(num_cells) &
                     / (2.0d+0 * chord(material_num)))**(-1) &
                     * (psi_bound_r(m) + (tot_source(num_cells) * delta_x(num_cells)) &
                     / (2.0d+0 * dabs(mu(m))) &
-                    + (delta_x(num_cells) * prob(material_off_num) * psi(num_cells, m, material_off_num)) &
+                    + (delta_x(num_cells) * alpha * prob(material_off_num) * psi(num_cells, m, material_off_num)) &
                     / (2.0d+0 * prob(material_num) * chord(material_off_num)))
                 psi_i_m(num_cells, m, material_num) = 2.0d+0 * psi(num_cells, m, material_num) - psi_bound_r(m)
             end do
@@ -177,11 +190,11 @@ program steady_state_slab_closure
                     ! Continuation of boundaries
                     psi_i_p(c, m, material_num) = psi_i_m(c + 1, m, material_num)
                     psi(c, m, material_num) = (1.0d+0 + (macro_tot(c, material_num) * delta_x(c)) &
-                        / (2.0d+0 * dabs(mu(m))) + delta_x(c) &
+                        / (2.0d+0 * dabs(mu(m))) + alpha * delta_x(c) &
                         / (2.0d+0 * chord(material_num)))**(-1) &
                         * (psi_i_p(c, m, material_num) + (tot_source(c) * delta_x(c)) &
                         / (2.0d+0 * dabs(mu(m))) &
-                        + (delta_x(c) * prob(material_off_num) * psi(c, m, material_off_num)) &
+                        + (delta_x(c) * alpha * prob(material_off_num) * psi(c, m, material_off_num)) &
                         / (2.0d+0 * prob(material_num) * chord(material_off_num)))
                     psi_i_m(c, m, material_num) = 2.0d+0 * psi(c, m, material_num) - psi_i_p(c, m, material_num)
                 end do
