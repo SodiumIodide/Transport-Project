@@ -29,7 +29,7 @@ sub main {
     }
 
     # Compile executable
-    comp("$COMPILER -o $BIN/$EXEC_NAME" . $obj_string);
+    comp("$COMPILER -O$OPT_LEVEL -o $BIN/$EXEC_NAME" . $obj_string);
     print "Compilation completed\n";
     clean();
 }
