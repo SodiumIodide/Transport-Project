@@ -45,8 +45,9 @@ def hist_plot(histname):
     # Trim zero values here
     prob = np.array([p for i, p in enumerate(prob) if num[i] != 0])
     num = np.array([n for n in num if n != 0])
-    plt.plot(prob, num)
+    plt.scatter(prob, num, s=10)
     plt.xlim(xmin=0.0)
+    plt.grid(which='major', axis='both')
     plt.xlabel(f"Percentage of {label}")
     plt.ylabel(f"Probability of {label}")
     plt.savefig(plotname)
