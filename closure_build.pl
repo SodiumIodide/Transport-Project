@@ -6,6 +6,7 @@ use strict;
 
 my $SRC = "./src_f";
 my $BIN = "./bin";
+my $OUT = "./out";
 my $COMPILER = "gfortran";
 my @FILES = qw/
     self_library.f90
@@ -18,6 +19,7 @@ sub main {
     print "Compiling using $COMPILER...\n";
     # Build overall object list for executable compilation
 
+    clean_data();
     my $obj_string = "";
     # Compile individual objects
     foreach my $src_name (@FILES) {
@@ -54,6 +56,15 @@ sub clean {
     }
     closedir $curdir;
     print "Working directory cleaned of compiler artifacts\n";
+}
+
+sub clean_data {
+    opendir(my $dir, $OUT) or die "Couldn't open $OUT: $!";
+    while (my $filename = readdir($dir)) {
+        unlink "$OUT/$filename" if $filename =~ /closure/;
+    }
+    closedir $dir;
+    print "Output directory cleaned of previous data\n";
 }
 
 main() unless caller;
