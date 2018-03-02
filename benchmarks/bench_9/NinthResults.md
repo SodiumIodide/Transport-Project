@@ -30,10 +30,12 @@ Transmission | 0.6045 | 0.6086 | 0.6061359 | 0.6104921
 
 ### Thickness = 10.0
 
-Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
---- | --- | --- | --- | ---
-Reflection | 0.4466 | 0.3272 | 0.4476624 | 0.3282107
-Transmission | 0.1037 | 0.1195 | 0.1042555 | 0.1198366
+Alpha = 1.7392527
+
+Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model | Alpha Closure
+--- | --- | --- | --- | --- | ---
+Reflection | 0.4466 | 0.3272 | 0.4476624 | 0.3282107 | 0.3509208
+Transmission | 0.1037 | 0.1195 | 0.1042555 | 0.1198366 | 0.0659534
 
 Above calculated exact data is for $1 \times 10^6$ realizations. See following table for others.
 

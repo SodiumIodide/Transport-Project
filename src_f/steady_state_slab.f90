@@ -18,7 +18,7 @@ program steady_state_slab
         histogram_points = int(1.0d+2, 4)
     logical, parameter :: &
         tally = .false., &
-        make_histogram = .true.
+        make_histogram = .false.
     real(8), parameter :: &
         histogram_min = 0.0d+0, &
         histogram_max = 1.0d+0
@@ -30,9 +30,9 @@ program steady_state_slab
         inner_tolerance = 1.0d-7, &
         histogram_delta = 1.0+0 / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
-        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
-        chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
+        tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.99d+0, dble(200)/dble(101)*0.99d+0/), &  ! 1/cm
+        chord = (/dble(101)/dble(20), dble(101)/dble(20)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables
@@ -472,9 +472,9 @@ program steady_state_slab
              status="replace", action="write")
         open(unit=12, file="./out/refl_histogram.out", form="formatted", &
              status="replace", action="write")
-        do i = 1, histogram_points
-            write(11,*) histogram_array(i), pdf_trans_histogram(i)
-            write(12,*) histogram_array(i), pdf_refl_histogram(i)
+        do i = 1, (histogram_points - 1)
+            write(11,*) (histogram_array(i) + delta_x / 2.0), pdf_trans_histogram(i)
+            write(12,*) (histogram_array(i) + delta_x / 2.0), pdf_refl_histogram(i)
         end do
         close(11)
         close(12)

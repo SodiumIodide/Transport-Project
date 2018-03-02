@@ -30,7 +30,9 @@ Transmission | 0.7666 | 0.7733 | 0.7666968 | 0.7755969
 
 ### Thickness = 10.0
 
-Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model
---- | --- | --- | --- | ---
-Reflection | 0.4344 | 0.2910 | 0.4350536 | 0.2918459
-Transmission | 0.1861 | 0.1945 | 0.1856119 | 0.1950590
+Alpha = 1.7392527
+
+Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model | Alpha Closure
+--- | --- | --- | --- | --- | ---
+Reflection | 0.4344 | 0.2910 | 0.4350536 | 0.2918459 | 0.2912478
+Transmission | 0.1861 | 0.1945 | 0.1856119 | 0.1950590 | 0.1330648

@@ -4,6 +4,7 @@ Simple file to plot the output.
 '''
 
 import re
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -67,7 +68,6 @@ def main():
         plt.plot(x_values, flux, label=legend_title)
     plt.grid(which='major', axis='both')
     plt.legend()
-    #plt.title("Steady State Slab")
     plt.xlabel("x (cm)")
     plt.ylabel("Flux (1/cm^2-s-MeV)")
     plt.savefig(f"./plots/{plotname}")
@@ -83,7 +83,8 @@ def main():
     histnames = ["./out/trans_histogram.out",
                  "./out/refl_histogram.out"]
     for histname in histnames:
-        hist_plot(histname)
+        if os.path.isfile(histname):
+            hist_plot(histname)
 
 if __name__ == '__main__':
     main()
