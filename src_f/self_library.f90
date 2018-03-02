@@ -103,34 +103,6 @@ module self_library
                   (dble(order_two) / dble(order_one))**2
     end subroutine legendre_gauss_quad
 
-    subroutine mat_diff(mat1, mat2, num_x, num_y, err)
-        implicit none
-
-        integer, intent(in) :: &
-            num_x, num_y
-        real(8), dimension(num_x, num_y), intent(in) :: &
-            mat1, mat2
-        real(8), intent(out) :: &
-            err
-        integer :: &
-            i, j
-        real(8) :: &
-            difference
-
-        err = 0.0d+0
-
-        do i = 1, num_x
-            do j = 1, num_y
-                if ((mat1(i, j) /= 0.0d+0) .and. (mat2(i, j) /= 0.0d+0)) then
-                    difference = mat1(i, j) - mat2(i, j)
-                    if (difference > err) then
-                        err = difference
-                    end if
-                end if
-            end do
-        end do
-    end subroutine mat_diff
-
     subroutine histogram_add(histogram, histogram_array, histogram_points, value)
         implicit none
 
@@ -148,13 +120,13 @@ module self_library
             data_inserted
 
         data_inserted = .false.
-        i = 1
+        i = 0
         do while ((.not. data_inserted) .and. (i < histogram_points - 1))
+            i = i + 1
             if (histogram_array(i + 1) > value) then
                 histogram(i) = histogram(i) + int(1, 8)
                 data_inserted = .true.
             end if
-            i = i + 1
         end do
         if (.not. data_inserted) then
             print *, "Data not valid histogram entry"

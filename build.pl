@@ -34,12 +34,14 @@ sub main {
 
     # Compile executable
     comp("$COMPILER -O$OPT_LEVEL -o $BIN/$EXEC_NAME" . $obj_string);
+    die "Compilation failed\n" unless (-e "$BIN/$EXEC_NAME");
     print "Compilation completed\n";
     clean();
 }
 
 sub comp {
     my $command = shift;
+    unlink "$BIN/$EXEC_NAME" if (-e "$BIN/$EXEC_NAME");
     open my $output, "-|", $command;
     while (<$output>) {
         die "Compilation failed\n" if length($_) > 0;

@@ -12,7 +12,7 @@ program steady_state_slab_closure
         num_cells = int(5.0d+2, 4), &
         num_materials = 2
     logical, parameter :: &
-        use_alpha = .true.
+        use_alpha = .false.
 
     ! Material properties
     real(8), parameter :: &
@@ -20,10 +20,10 @@ program steady_state_slab_closure
 
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
-        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0/), &  ! 1/cm
+        tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.0d+0, dble(200)/dble(101)*0.0d+0/), &  ! 1/cm
         abs_const = tot_const - scat_const, &  ! 1/cm
-        chord = (/dble(99)/dble(10), dble(11)/dble(10)/)  ! cm
+        chord = (/dble(101)/dble(20), dble(101)/dble(20)/)  ! cm
     real(8), dimension(num_materials) :: &
         prob
 

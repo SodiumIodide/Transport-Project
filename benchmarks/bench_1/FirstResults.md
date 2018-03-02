@@ -34,5 +34,5 @@ Alpha = 3.2712594
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model | Alpha Closure
 --- | --- | --- | --- | --- | ---
-Reflection | 0.4342 | 0.3760 | 0.4411367 | 0.3771022 | 0.4482795
-Transmission | 0.0146 | 0.0259 | 0.0144818 | 0.0259773 | 0.0104524
+Reflection | 0.4342 | 0.3760 | 0.4411713 | 0.3771022 | 0.4482795
+Transmission | 0.0146 | 0.0259 | 0.0144881 | 0.0259773 | 0.0104524

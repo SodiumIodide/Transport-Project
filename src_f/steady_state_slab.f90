@@ -15,10 +15,10 @@ program steady_state_slab
         num_cells = int(2.0d+2, 4), &
         num_ords = int(16, 4), &
         num_materials = int(2, 4), &
-        histogram_points = int(1.0d+2, 4)
+        histogram_points = int(2.0d+2, 4)
     logical, parameter :: &
         tally = .false., &
-        make_histogram = .false.
+        make_histogram = .true.
     real(8), parameter :: &
         histogram_min = 0.0d+0, &
         histogram_max = 1.0d+0
@@ -28,11 +28,11 @@ program steady_state_slab
         thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &  ! cm
         inner_tolerance = 1.0d-7, &
-        histogram_delta = 1.0+0 / dble(histogram_points)
+        histogram_delta = histogram_max / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
-        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
-        chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
+        tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.9d+0, dble(200)/dble(101)*0.9d+0/), &  ! 1/cm
+        chord = (/dble(101)/dble(20), dble(101)/dble(20)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables
@@ -80,6 +80,8 @@ program steady_state_slab
         trans_histogram, refl_histogram
     real(8), dimension(histogram_points) :: &
         pdf_trans_histogram, pdf_refl_histogram, histogram_array
+    real(8) :: &
+        pdf_trans_sum, pdf_refl_sum
 
     ! Assigment of material variables
     macro_tot = tot_const  ! 1/cm
@@ -99,6 +101,8 @@ program steady_state_slab
     refl_histogram(:) = 0
     pdf_trans_histogram(:) = 0.0d+0
     pdf_refl_histogram(:) = 0.0d+0
+    pdf_trans_sum = 0.0d+0
+    pdf_refl_sum = 0.0d+0
     ! Tally averages for boundary leakage
     left_switch = .false.
     right_switch = .false.
@@ -465,19 +469,23 @@ program steady_state_slab
     ! Create histogram data
     if (make_histogram) then
         do i = 1, histogram_points
-            pdf_trans_histogram(i) = dble(trans_histogram(i)) / dble(num_iter_outer) / histogram_delta
-            pdf_refl_histogram(i) = dble(refl_histogram(i)) / dble(num_iter_outer) / histogram_delta
+            pdf_trans_histogram(i) = dble(trans_histogram(i)) / dble(num_iter_outer)
+            pdf_trans_sum = pdf_trans_sum + pdf_trans_histogram(i)
+            pdf_refl_histogram(i) = dble(refl_histogram(i)) / dble(num_iter_outer)
+            pdf_refl_sum = pdf_refl_sum + pdf_refl_histogram(i)
         end do
         open(unit=11, file="./out/trans_histogram.out", form="formatted", &
              status="replace", action="write")
         open(unit=12, file="./out/refl_histogram.out", form="formatted", &
              status="replace", action="write")
         do i = 1, (histogram_points - 1)
-            write(11,*) (histogram_array(i) + delta_x / 2.0), pdf_trans_histogram(i)
-            write(12,*) (histogram_array(i) + delta_x / 2.0), pdf_refl_histogram(i)
+            write(11,*) (histogram_array(i) + histogram_delta / 2.0d+0), pdf_trans_histogram(i)
+            write(12,*) (histogram_array(i) + histogram_delta / 2.0d+0), pdf_refl_histogram(i)
         end do
         close(11)
         close(12)
+        print *, "Sum of transmission probability: ", pdf_trans_sum
+        print *, "Sum of reflection probability: ", pdf_refl_sum
     end if
 
     ! Deallocate all variable-width unstructured arrays

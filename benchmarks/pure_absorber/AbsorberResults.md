@@ -46,10 +46,12 @@ Transmission | 0.4751757 | 0.4756388
 
 ### Thickness = 10.0
 
-Parameter | Calculated Exact | Calculated Model
---- | --- | ---
-Reflection | 0.000000 | 0.0000000
-Transmission | 0.0647808 | 0.0641339
+Alpha = 1.0000000
+
+Parameter | Calculated Exact | Calculated Model | Alpha Closure
+--- | --- | --- | ---
+Reflection | 0.000000 | 0.0000000 | 0.0000000
+Transmission | 0.0647808 | 0.0641339 | 0.0641339
 
 #### Thickness = 10.0 Model Plot
 

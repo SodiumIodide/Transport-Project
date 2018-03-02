@@ -36,21 +36,32 @@ def realization_plot(realname):
 
 def hist_plot(histname):
     '''Plot of a reflection or transmission PDF histogram'''
-    if "refl" in histname:
-        label = "Reflection"
-    else:
-        label = "Transmission"
     plotname = histname.replace("out", "plots").replace(".plots", ".png")
     prob, num = get_data(histname)
     # Trim zero values here
     prob = np.array([p for i, p in enumerate(prob) if num[i] != 0])
     num = np.array([n for n in num if n != 0])
-    plt.scatter(prob, num, s=10)
+    if "refl" in histname:
+        label = "Reflection"
+        prob = prob[1:]
+        num = num[1:]
+    else:
+        label = "Transmission"
+        prob = prob[:-1]
+        num = num[:-1]
+    plt.plot(prob, num)
     plt.xlim(xmin=0.0)
+    plt.ylim(ymin=0.0)
     plt.grid(which='major', axis='both')
     plt.xlabel(f"Percentage of {label}")
     plt.ylabel(f"Probability of {label}")
     plt.savefig(plotname)
+    print(f"Histogram saved as {plotname}")
+    plt.yscale('log')
+    plt.ylim(ymin=min(num))
+    plotname = plotname.replace(".png", "_log.png")
+    plt.savefig(plotname)
+    print(f"Histogram saved as {plotname}")
     plt.clf()
     plt.cla()
 
