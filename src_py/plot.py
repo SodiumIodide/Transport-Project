@@ -43,12 +43,10 @@ def hist_plot(histname):
     num = np.array([n for n in num if n != 0])
     if "refl" in histname:
         label = "Reflection"
-        prob = prob[1:]
-        num = num[1:]
     else:
         label = "Transmission"
-        prob = prob[:-1]
-        num = num[:-1]
+    prob = prob[1:-1]
+    num = num[1:-1]
     plt.plot(prob, num)
     plt.xlim(xmin=0.0)
     plt.ylim(ymin=0.0)
