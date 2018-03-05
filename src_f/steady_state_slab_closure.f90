@@ -21,7 +21,7 @@ program steady_state_slab_closure
     ! Individual material properties
     real(8), dimension(num_materials), parameter :: &
         tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
-        scat_const = (/dble(2)/dble(101)*0.0d+0, dble(200)/dble(101)*0.0d+0/), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.95d+0, dble(200)/dble(101)*0.95d+0/), &  ! 1/cm
         abs_const = tot_const - scat_const, &  ! 1/cm
         chord = (/dble(101)/dble(20), dble(101)/dble(20)/)  ! cm
     real(8), dimension(num_materials) :: &

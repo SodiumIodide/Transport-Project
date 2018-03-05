@@ -30,8 +30,11 @@ program steady_state_slab
         inner_tolerance = 1.0d-7, &
         histogram_delta = histogram_max / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
+        !tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
+        !scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
+        !chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
         tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
-        scat_const = (/dble(2)/dble(101)*1.0d+0, dble(200)/dble(101)*0.0d+0/), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.95d+0, dble(200)/dble(101)*0.95d+0/), &  ! 1/cm
         chord = (/dble(101)/dble(20), dble(101)/dble(20)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
@@ -469,10 +472,11 @@ program steady_state_slab
     ! Create histogram data
     if (make_histogram) then
         do i = 1, histogram_points
-            pdf_trans_histogram(i) = dble(trans_histogram(i)) / dble(num_iter_outer)
-            pdf_trans_sum = pdf_trans_sum + pdf_trans_histogram(i)
-            pdf_refl_histogram(i) = dble(refl_histogram(i)) / dble(num_iter_outer)
-            pdf_refl_sum = pdf_refl_sum + pdf_refl_histogram(i)
+            ! Simple method of calculating the net probability
+            pdf_trans_histogram(i) = dble(trans_histogram(i)) / dble(num_iter_outer) / histogram_delta
+            pdf_trans_sum = pdf_trans_sum + pdf_trans_histogram(i) * histogram_delta
+            pdf_refl_histogram(i) = dble(refl_histogram(i)) / dble(num_iter_outer) / histogram_delta
+            pdf_refl_sum = pdf_refl_sum + pdf_refl_histogram(i) * histogram_delta
         end do
         open(unit=11, file="./out/trans_histogram.out", form="formatted", &
              status="replace", action="write")
