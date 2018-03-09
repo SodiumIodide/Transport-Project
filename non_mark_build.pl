@@ -28,7 +28,7 @@ sub main {
 
     # Compile executable
     comp("$COMPILER -O$OPT_LEVEL -o $BIN/$EXEC_NAME" . $obj_string);
-    die "Compilation failed\n" unless -e "$SRC/$EXEC_NAME";
+    die "Compilation failed\n" unless -e "$BIN/$EXEC_NAME";
     print "Compilation completed\n";
     clean();
 }

@@ -28,7 +28,7 @@ module geometry_gen
             cons_thickness, rand_num, distance, chord, prob_a
         ! The total number of cells to utilize for each geometry segment
         integer, parameter :: &
-            num_divs = 50
+            num_divs = 100
 
         !if (thickness > 5.0d+0) then
         !    num_divs = 100

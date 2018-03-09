@@ -30,12 +30,12 @@ program steady_state_slab
         inner_tolerance = 1.0d-7, &
         histogram_delta = histogram_max / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
-        !tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        !scat_const = (/dble(10)/dble(99)*0.0d+0, dble(100)/dble(11)*1.0d+0/), &  ! 1/cm
-        !chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
-        tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
-        scat_const = (/dble(2)/dble(101)*0.95d+0, dble(200)/dble(101)*0.95d+0/), &  ! 1/cm
-        chord = (/dble(101)/dble(20), dble(101)/dble(20)/), &  ! cm
+        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
+        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0/), &  ! 1/cm
+        chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
+        !tot_const = (/dble(2)/dble(101), dble(20)/dble(101)/), &  ! 1/cm
+        !scat_const = (/dble(2)/dble(101)*0.90d+0, dble(20)/dble(101)*0.90d+0/), &  ! 1/cm
+        !chord = (/dble(101)/dble(400), dble(101)/dble(4000)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables

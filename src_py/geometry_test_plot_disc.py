@@ -30,14 +30,14 @@ def main():
                 if mat == 2:
                     mat_2_x = np.append(mat_2_x, x_value)
                     mat_2 = np.append(mat_2, mat)
-    plt.scatter(mat_1_x, mat_1, color='b')
-    plt.scatter(mat_2_x, mat_2, color='r')
+    plt.scatter(mat_1_x, mat_1, marker='_', color='b', s=5)
+    plt.scatter(mat_2_x, mat_2, marker='_', color='r', s=5)
     print(mat_1_x)
     plt.title("Sample Markovian Geometry")
     plt.xlabel("x")
     plt.ylabel("Material Number")
-    plt.grid(which='major', axis='x')
     plt.ylim(0, 5)
+    plt.xlim(0, 10)
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
     with open("./out/geometry_1.out", "w") as out_1:

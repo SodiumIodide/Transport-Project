@@ -14,7 +14,10 @@ program steady_state_slab_non_mark
     real(8), parameter :: &
         thickness = 10.0d+0, &  ! cm
         scat_const = 0.9d+0, &  ! 1/cm
-        tot_const = 1.0d+0  ! 1/cm
+        !tot_const = 1.0d+0  ! 1/cm
+        !tot_const = (dble(101)/dble(400) / (dble(101)/dble(400) + dble(101)/dble(4000)) * dble(2)/dble(101) &
+        !    + dble(101)/dble(4000) / (dble(101)/dble(400) + dble(101)/dble(4000)) * dble(20)/dble(101))  ! 1/cm
+        tot_const = 0.03214607175003  ! 1/cm
 
     ! Material parameters
     real(8), dimension(num_cells) :: &
