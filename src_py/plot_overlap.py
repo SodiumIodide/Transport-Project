@@ -40,6 +40,8 @@ def plot_overlap(first_x, first_y, first_label, second_x, second_y, second_label
     plt.ylabel('Flux (1/cm^2-s-MeV)')
     plt.xlim(xmin=0.0)
     plt.ylim(ymin=0.0)
+    plt.yscale('log')
+    plt.ylim([1e-3, 1e1])
     plt.savefig(f"{destination}.png")
     plt.clf()
     plt.cla()

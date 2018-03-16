@@ -20,6 +20,7 @@ sub main {
     # Build overall object list for executable compilation
 
     clean_data();
+    unlink "$SRC/$EXEC_NAME" if -e "$SRC/$EXEC_NAME";
     my $obj_string = "";
     # Compile individual objects
     foreach my $src_name (@FILES) {
@@ -37,7 +38,6 @@ sub main {
 
 sub comp {
     my $command = shift;
-    unlink "$SRC/$EXEC_NAME" if -e "$SRC/$EXEC_NAME";
     open my $output, "-|", $command;
     while (<$output>) {
         die "Compilation failed\n" if length($_) > 0;
