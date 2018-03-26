@@ -34,9 +34,8 @@ Alpha = 1.7392527
 
 Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model | Alpha Closure
 --- | --- | --- | --- | --- | ---
-Reflection | 0.4785 | 0.3707 | 0.4799704 | 0.3717843 | 0.4036980
-Transmission | 0.0159 | 0.0237 | 0.0157653 | 0.0238105 | 0.0140277
-
+Reflection | 0.4785 | 0.3707 | 0.4799376 | 0.3717843 | 0.4036980
+Transmission | 0.0159 | 0.0237 | 0.0159978 | 0.0238105 | 0.0140277
 
 Paramter | $10^6$ Realizations | $10^7$ Realizations
 --- | --- | ---

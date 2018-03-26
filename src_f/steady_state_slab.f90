@@ -8,7 +8,7 @@ program steady_state_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_iter_outer = int(1.0d+6, 8), &
+        num_iter_outer = int(5.0d+5, 8), &
         num_iter_inner = int(1.0d+6, 8), &
         seed = int(123456, 8)
     integer, parameter :: &
@@ -30,12 +30,12 @@ program steady_state_slab
         inner_tolerance = 1.0d-7, &
         histogram_delta = histogram_max / dble(histogram_points)
     real(8), dimension(num_materials), parameter :: &
-        tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
-        scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0/), &  ! 1/cm
-        chord = (/dble(99)/dble(100), dble(11)/dble(100)/), &  ! cm
-        !tot_const = (/dble(2)/dble(101), dble(20)/dble(101)/), &  ! 1/cm
-        !scat_const = (/dble(2)/dble(101)*0.90d+0, dble(20)/dble(101)*0.90d+0/), &  ! 1/cm
-        !chord = (/dble(101)/dble(400), dble(101)/dble(4000)/), &  ! cm
+        !tot_const = (/dble(10)/dble(99), dble(100)/dble(11)/), &  ! 1/cm
+        !scat_const = (/dble(10)/dble(99)*0.9d+0, dble(100)/dble(11)*0.9d+0/), &  ! 1/cm
+        !chord = (/dble(99)/dble(10), dble(11)/dble(10)/), &  ! cm
+        tot_const = (/dble(2)/dble(101), dble(200)/dble(101)/), &  ! 1/cm
+        scat_const = (/dble(2)/dble(101)*0.9d+0, dble(200)/dble(101)*0.9d+0/), &  ! 1/cm
+        chord = (/dble(101)/dble(20), dble(101)/dble(20)/), &  ! cm
         spont_source_const = (/0.0d+0, 0.0d+0/)  ! 1/cm^3
 
     ! Material variables
@@ -93,8 +93,9 @@ program steady_state_slab
     phi_mat_old(:, :) = 1.0d+0  ! 1/cm^2-s-MeV
     ! Assignment of initial calculation variables
     phi_outer(:) = 1.0d+0  ! 1/cm^2-s-MeV
+    total_chord = 0.0d+0  ! cm
     do k = 1, num_materials
-        total_chord = total_chord + chord(k)
+        total_chord = total_chord + chord(k)  ! cm
     end do
     prob = chord / total_chord
     psi_mat_leak_l(:, :) = 0.0d+0  ! 1/cm^2-s-MeV-strad
@@ -360,25 +361,27 @@ program steady_state_slab
                 ! Calculate the average negative leakage from left boundary
                 if (left_switch) then
                     do m = 1, (num_ords / 2)
+                        psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) + psi_i_m(1, m)
                         ! Don't weight the initial zero
-                        if (psi_mat_leak_l(m, k) == 0.0d+0) then
-                            psi_mat_leak_l(m, k) = psi_i_m(1, m)
-                        else
-                            psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) &
-                                + (psi_i_m(1, m) - psi_mat_leak_l(m, k)) / dble(iterations_outer)
-                        end if
+                        !if (psi_mat_leak_l(m, k) == 0.0d+0) then
+                        !    psi_mat_leak_l(m, k) = psi_i_m(1, m)
+                        !else
+                        !    psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) &
+                        !        + (psi_i_m(1, m) - psi_mat_leak_l(m, k)) / dble(iterations_outer)
+                        !end if
                     end do
                 end if
                 ! Calculate the average positive leakage from right boundary
                 if (right_switch) then
                     do m = (num_ords / 2 + 1), num_ords
+                        psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) + psi_i_p(num_ind_cells, m)
                         ! Don't weight the initial zero
-                        if (psi_mat_leak_r(m, k) == 0.0d+0) then
-                            psi_mat_leak_r(m, k) = psi_i_p(num_ind_cells, m)
-                        else
-                            psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) &
-                                + (psi_i_p(num_ind_cells, m) - psi_mat_leak_r(m, k)) / dble(iterations_outer)
-                        end if
+                        !if (psi_mat_leak_r(m, k) == 0.0d+0) then
+                        !    psi_mat_leak_r(m, k) = psi_i_p(num_ind_cells, m)
+                        !else
+                        !    psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) &
+                        !        + (psi_i_p(num_ind_cells, m) - psi_mat_leak_r(m, k)) / dble(iterations_outer)
+                        !end if
                     end do
                 end if
             end do
@@ -424,6 +427,12 @@ program steady_state_slab
             end if
         end if  ! Logical test for inner convergence: don't average nonconverged samples
     end do  ! Outer loop
+
+    do k = 1, num_materials
+        psi_mat_leak_l(:, k) = psi_mat_leak_l(:, k) / (dble(num_iter_outer) * prob(k))
+        psi_mat_leak_r(:, k) = psi_mat_leak_r(:, k) / (dble(num_iter_outer) * prob(k))
+        phi_mat_new(:, k) = phi_mat_new(:, k) / (dble(num_iter_outer) * prob(k))
+    end do
 
     ! Print the final realization onto phi_real for plotting purposes
     phi_real(:) = 0.0d+0  ! 1/cm^2-s-MeV

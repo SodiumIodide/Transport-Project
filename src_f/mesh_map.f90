@@ -272,13 +272,13 @@ module mesh_map
                 end do  ! Unstructured loop
 
                 ! Average the results, or just append if no results previously
-                !material_struct(i, k) = material_struct(i, k) + (weight_tally / struct_delta)  ! unit
-                if (material_struct(i, k) == 0.0d+0) then
-                    material_struct(i, k) = weight_tally / struct_delta  ! unit
-                else if (weight_tally > 0.0d+0) then
-                    material_struct(i, k) = material_struct(i, k) + &
-                        (weight_tally / struct_delta - material_struct(i, k)) / dble(num_real)  ! unit
-                end if
+                material_struct(i, k) = material_struct(i, k) + (weight_tally / struct_delta)  ! unit
+                !if (material_struct(i, k) == 0.0d+0) then
+                !    material_struct(i, k) = weight_tally / struct_delta  ! unit
+                !else if (weight_tally > 0.0d+0) then
+                !    material_struct(i, k) = material_struct(i, k) + &
+                !        (weight_tally / struct_delta - material_struct(i, k)) / dble(num_real)  ! unit
+                !end if
             end do  ! Structured loop
         end do  ! Material loop
     end subroutine material_calc

@@ -29,12 +29,12 @@ sub main {
     # Compile individual objects
     foreach my $src_name (@FILES) {
         my $obj_name = $src_name =~ s/\.f90/\.o/r;
-        comp("$COMPILER -c $SRC/$src_name -o $BIN/$obj_name -O$OPT_LEVEL");
+        comp("$COMPILER -Wall -c $SRC/$src_name -o $BIN/$obj_name -O$OPT_LEVEL");
         $obj_string = $obj_string . " $BIN/" . $obj_name;
     }
 
     # Compile executable
-    comp("$COMPILER -O$OPT_LEVEL -o $BIN/$EXEC_NAME" . $obj_string);
+    comp("$COMPILER -Wall -O$OPT_LEVEL -o $BIN/$EXEC_NAME" . $obj_string);
     die "Compilation failed\n" unless (-e "$BIN/$EXEC_NAME");
     print "Compilation completed\n";
     clean();
