@@ -70,7 +70,7 @@ implicit none
   integer(I8), parameter :: RN_ADD    = 1_I8
   integer,     parameter :: RN_BITS   = 63
   integer(I8), parameter :: RN_STRIDE = 152917_I8
-  real(kind=16), parameter :: RN_PERIOD = 2.0d0**63
+  integer(I8), parameter :: RN_PERIOD = ishft( 1_I8, RN_BITS )
   integer(I8), parameter :: RN_MOD    = ishft( 1_I8, RN_BITS )
   integer(I8), parameter :: RN_MASK   = ishft( not(0_I8), RN_BITS-64 )
   integer(I8), parameter :: RN_SHIFT  = 53 - RN_BITS
@@ -238,7 +238,7 @@ CONTAINS
     character(len=*), intent(in) :: c1, c2
     write(*,*) ' ********** error: ',c1
     write(*,*) ' ********** error: ',c2
-    stop '**error**'
+    stop i
   end subroutine expire
 
   !-------------------------------------------------------------------
