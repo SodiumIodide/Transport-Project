@@ -13,11 +13,19 @@ program steady_state_slab_non_mark
     ! Material properties
     real(8), parameter :: &
         thickness = 10.0d+0, &  ! cm
-        scat_const = 0.9d+0, &  ! 1/cm
-        !tot_const = 1.0d+0  ! 1/cm
-        !tot_const = (dble(101)/dble(400) / (dble(101)/dble(400) + dble(101)/dble(4000)) * dble(2)/dble(101) &
-        !    + dble(101)/dble(4000) / (dble(101)/dble(400) + dble(101)/dble(4000)) * dble(20)/dble(101))  ! 1/cm
-        tot_const = 0.03214607175003  ! 1/cm
+        !tot_const = 1.0d+0, &  ! 1/cm
+        !first_lambda = dble(99) / dble(10), &
+        !second_lambda = dble(11) / dble(10), &
+        first_lambda = dble(101) / dble(20), &
+        second_lambda = dble(101) / dble(20), &
+        !first_xs = dble(10) / dble(99), &
+        !second_xs = dble(100) / dble(11), &
+        first_xs = dble(2) / dble(101), &
+        second_xs = dble(200) / dble(101), &
+        first_prob = first_lambda / (first_lambda + second_lambda), &
+        second_prob = 1.0d+0 - first_prob, &
+        tot_const = first_xs * first_prob + second_xs * second_prob, &  ! 1/cm
+        scat_const = 0.9d+0 * first_xs * first_prob + 0.9d+0 * second_xs * second_prob  ! 1/cm
 
     ! Material parameters
     real(8), dimension(num_cells) :: &
@@ -213,7 +221,7 @@ program steady_state_slab_non_mark
 
     ! Create plot
     call linspace(cell_vector, 0.0d+0, thickness, num_cells)
-    open(unit=7, file="./out/steady_state_slab.out", form="formatted", &
+    open(unit=7, file="./out/steady_state_slab_atomic_mix.out", form="formatted", &
          status="replace", action="write")
     do i = 1, num_cells
         write(7,*) cell_vector(i), phi_new(i)

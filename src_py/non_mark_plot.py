@@ -36,7 +36,7 @@ def realization_plot(realname):
 def main():
     '''Main wrapper'''
     plotname = "steady_state_slab_non_mark.png"
-    filenames = ["./out/steady_state_slab.out"]
+    filenames = ["./out/steady_state_slab_atomic_mix.out"]
     for i, filename in enumerate(filenames):
         x_values, flux = get_data(filename)
         plt.plot(x_values, flux)

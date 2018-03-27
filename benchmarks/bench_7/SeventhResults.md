@@ -32,7 +32,7 @@ Transmission | 0.6599 | 0.6652 | 0.6617583 | 0.6671930
 
 Alpha = 4.9751959
 
-Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model | Alpha Closure
---- | --- | --- | --- | --- | ---
-Reflection | 0.6916 | 0.6070 | 0.6921436 | 0.6088221 | 0.7257835
-Transmission | 0.1615 | 0.2391 | 0.1634426 | 0.2398485 | 0.1236162
+Parameter | Published Exact | Published Model | Calculated Exact | Calculated Model | Alpha Closure | Atomic Mix
+--- | --- | --- | --- | --- | --- | ---
+Reflection | 0.6916 | 0.6070 | 0.6921436 | 0.6088221 | 0.7257835 | 0.7890861
+Transmission | 0.1615 | 0.2391 | 0.1634426 | 0.2398485 | 0.1236162 | 0.0667858
