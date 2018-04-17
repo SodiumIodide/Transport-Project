@@ -14,12 +14,12 @@ program geometry_test
     integer :: &
         num_cells, i
     integer(8), parameter :: &
-        seed = int(123456, 8)
+        seed = int(123456789, 8)
 
     thickness = 1.0d+1  ! cm
     cons_thickness = 0.0d+0  ! cm
-    chord_a =  dble(101)/dble(20) ! cm
-    chord_b = dble(101)/dble(20)  ! cm
+    chord_a =  dble(99)/dble(10) ! cm
+    chord_b = dble(11)/dble(10)  ! cm
     num_cells = 0
 
     allocate(x_dist(0))

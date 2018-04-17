@@ -9,7 +9,7 @@ my $EXEC_NAME = "mc_slab.exe";
 sub main() {
     print "Running $EXEC_NAME...\n";
     system "./bin/$EXEC_NAME";
-    #system "python ./src_py/plot.py";
+    system "python ./src_py/mc_plot.py";
     print "Done\n";
 }
 

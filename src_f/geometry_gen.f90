@@ -82,7 +82,7 @@ module geometry_gen
             end if
 
             ! Calculate and append the material length
-            distance = chord * dlog(1.0d+0 / (1.0d+0 - rand_num))  ! cm
+            distance = chord * (-dlog(rand_num))  ! cm
             cons_thickness = cons_thickness + distance  ! cm
 
             ! Check on thickness to not overshoot boundary

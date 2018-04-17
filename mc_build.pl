@@ -11,10 +11,12 @@ my $COMPILER = "gfortran";
 my @FILES = qw/
     mcnp_random.f90
     self_library.f90
+    mc_library.f90
     mc_slab.f90
 /;
 my $EXEC_NAME = "mc_slab.exe";
 my $OPT_LEVEL = 3;
+my $OPENMP = 1;
 
 sub main {
     print "Compiling using $COMPILER...\n";
@@ -23,15 +25,16 @@ sub main {
     clean_data();
     unlink "$BIN/$EXEC_NAME" if (-e "$BIN/$EXEC_NAME");
     my $obj_string = "";
+    my $omp = $OPENMP ? "-fopenmp" : "";
     # Compile individual objects
     foreach my $src_name (@FILES) {
         my $obj_name = $src_name =~ s/\.f90/\.o/r;
-        comp("$COMPILER -Wall -fopenmp -c $SRC/$src_name -o $BIN/$obj_name -O$OPT_LEVEL");
+        comp("$COMPILER -Wall $omp -c $SRC/$src_name -o $BIN/$obj_name -O$OPT_LEVEL");
         $obj_string = $obj_string . " $BIN/" . $obj_name;
     }
 
     # Compile executable
-    comp("$COMPILER -Wall -O$OPT_LEVEL -fopenmp -o $BIN/$EXEC_NAME" . $obj_string);
+    comp("$COMPILER -Wall -O$OPT_LEVEL $omp -o $BIN/$EXEC_NAME" . $obj_string);
     die "Compilation failed\n" unless (-e "$BIN/$EXEC_NAME");
     print "Compilation completed\n";
     clean();

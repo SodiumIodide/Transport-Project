@@ -12,7 +12,7 @@ program steady_state_slab_non_mark
 
     ! Material properties
     real(8), parameter :: &
-        thickness = 10.0d+0, &  ! cm
+        thickness = 1.0d+1, &  ! cm
         !tot_const = 1.0d+0, &  ! 1/cm
         !first_lambda = dble(99) / dble(10), &
         !second_lambda = dble(11) / dble(10), &
