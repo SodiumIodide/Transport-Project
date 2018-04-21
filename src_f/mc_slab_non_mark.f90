@@ -39,26 +39,22 @@ program mc_slab
     integer(8) :: &
         particle_counter
     real(8) :: &
-        leakage_l, leakage_r, mu, mu_0, azimuth, psi_bound_l, psi_bound_r, distance, absorbed, &
-        flight_distance, dist_in_cell
+        leakage_l, leakage_r, mu, mu_0, azimuth, distance, absorbed, &
+        collision_distance, dist_in_cell
     real(8), dimension(num_cells) :: &
         phi
     logical :: &
-        exists
+        exists, scattered
 
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
         point_vector
 
     ! Assignment of material variables
-    delta_x(:) = thickness / dble(num_cells)  ! cm
+    delta_x(:) = struct_thickness  ! cm
     phi(:) = 0.0d+0  ! 1/cm^2-s-MeV
     macro_scat(:) = scat_const  ! 1/cm
     macro_tot(:) = tot_const  ! 1/cm
-
-    ! Boundary conditions: 1/cm^2-s-MeV
-    psi_bound_l = 1.0d+0  ! Isotropic
-    psi_bound_r = 0.0d+0  ! Vacuum
 
     ! Tallies
     leakage_l = 0.0d+0
@@ -71,27 +67,29 @@ program mc_slab
     do particle_counter = int(1, 8), num_particles, int(1, 8)
         ! Spawn the particle
         exists = .true.
+        scattered = .false.
         mu = dsqrt(rang())
-        flight_distance = collision_distance_sample(tot_const, rang())  ! cm
-        distance = flight_distance * mu  ! cm
-        call check_distance(thickness, scat_const, tot_const, distance, exists, leakage_l, leakage_r, absorbed)
+        collision_distance = collision_distance_sample(tot_const, rang())  ! cm
         ! Start of geometry
         cell_index = 1
         dist_in_cell = 0.0d+0  ! cm
-        call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
-        ! Continue distance sampling and checking after a scattering collision
+        distance = 0.0d+0  ! cm
+        call move_particle(delta_x(cell_index), dist_in_cell, mu, scat_const, tot_const, &
+            collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
+            absorbed, cell_index, num_cells, phi(cell_index))
+        !call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
+        ! Continue distance sampling and checking as long as particle exists (scatter or in-geometry transfer)
         do while (exists)
-            mu_0 = 2.0d+0 * rang() - 1.0d+0
-            azimuth = 2.0d+0 * PI * rang()
-            mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
-            flight_distance = collision_distance_sample(tot_const, rang())  ! cm
-            distance = distance + flight_distance * mu  ! cm
-            call check_distance(thickness, scat_const, tot_const, distance, exists, leakage_l, leakage_r, absorbed)
-            call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
-            if ((((cell_index - 1) * delta_x(1) > distance) .or. ((cell_index) * delta_x(1) < distance)) &
-                .and. (cell_index > 0)) then
-                print *, (cell_index - 1) * delta_x(1), distance, (cell_index) * delta_x(1)
+            if (scattered) then
+                mu_0 = 2.0d+0 * rang() - 1.0d+0
+                azimuth = 2.0d+0 * PI * rang()
+                mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
             end if
+            collision_distance = collision_distance_sample(tot_const, rang())  ! cm
+            call move_particle(delta_x(cell_index), dist_in_cell, mu, scat_const, tot_const, &
+                collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
+                absorbed, cell_index, num_cells, phi(cell_index))
+            !call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
         end do
     end do
     !$omp end parallel do

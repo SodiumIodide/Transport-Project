@@ -4,7 +4,7 @@ module mc_library
         collision_distance_sample, &
         interface_distance_sample, &
         material_sample, &
-        check_distance, &
+        move_particle, &
         check_distance_lp, &
         tally_cells
 
@@ -48,7 +48,75 @@ module mc_library
         end if
     end function material_sample
 
-    subroutine check_distance(thickness, sigma_scat, sigma_tot, distance, exists, leakage_l, leakage_r, absorbed)
+    subroutine move_particle(delta_x, dist_in_cell, mu, sigma_scat, sigma_tot, &
+        distance_to_collision, distance, exists, scattered, leakage_l, leakage_r, absorbed, cell_index, num_cells, phi)
+        use mcnp_random
+
+        implicit none
+
+        real(8), intent(in) :: &
+            sigma_scat, sigma_tot, delta_x, mu, distance_to_collision
+        integer, intent(in) :: &
+            num_cells
+        integer, intent(inout) :: &
+            cell_index
+        real(8), intent(inout) :: &
+            leakage_l, leakage_r, absorbed, phi, distance, dist_in_cell
+        logical, intent(out) :: &
+            exists, scattered
+        real(8) :: &
+            distance_to_boundary, flight_distance
+
+        if (mu > 0.0d+0) then
+            distance_to_boundary = (delta_x - dist_in_cell) / dabs(mu)
+        else
+            distance_to_boundary = dist_in_cell / dabs(mu)
+        end if
+
+        ! Take the minimum of compared event distances
+        if (distance_to_boundary < distance_to_collision) then
+            ! Particle escapes region
+            scattered = .false.
+            flight_distance = distance_to_boundary
+            if (mu > 0.0d+0) then
+                cell_index = cell_index + 1
+                if (cell_index > num_cells) then
+                    leakage_r = leakage_r + 1.0d+0
+                    exists = .false.
+                else
+                    dist_in_cell = 0.0d+0  ! cm
+                end if
+            else
+                cell_index = cell_index - 1
+                if (cell_index < 1) then
+                    leakage_l = leakage_l + 1.0d+0
+                    exists = .false.
+                else
+                    ! This may need to be changed for the use of unstructured meshes
+                    dist_in_cell = delta_x  ! cm
+                end if
+            end if
+        else
+            ! Collision occurs
+            flight_distance = distance_to_collision
+            if (rang() > sigma_scat / sigma_tot) then
+                ! Absorption
+                absorbed = absorbed + 1.0d+0
+                exists = .false.
+                scattered = .false.
+            else
+                ! Scatter
+                scattered = .true.
+                dist_in_cell = dist_in_cell + distance_to_collision * mu
+            end if
+        end if
+
+        ! Apply distance tally for flux tracking
+        distance = distance + flight_distance * mu
+        phi = phi + flight_distance
+    end subroutine move_particle
+
+    subroutine check_distance_x(thickness, sigma_scat, sigma_tot, distance, exists, leakage_l, leakage_r, absorbed)
         use mcnp_random
 
         implicit none
@@ -72,7 +140,7 @@ module mc_library
             exists = .false.
             leakage_r = leakage_r + 1.0d+0
         end if
-    end subroutine check_distance
+    end subroutine check_distance_x
 
     subroutine check_distance_lp(thickness, sigma_scat, sigma_tot, mu, distance, distance_to_interface, &
         distance_to_collision, exists, leakage_l, leakage_r, absorbed, prob, flight_distance, mat_num, mat_change)
