@@ -31,7 +31,7 @@ program mc_slab
 
     ! Material variables
     real(8), dimension(num_cells) :: &
-        delta_x, macro_scat, macro_tot
+        delta_x
 
     ! Calculation variables
     integer :: &
@@ -40,7 +40,7 @@ program mc_slab
         particle_counter
     real(8) :: &
         leakage_l, leakage_r, mu, mu_0, azimuth, distance, absorbed, &
-        collision_distance, dist_in_cell
+        collision_distance, dist_in_cell, macro_scat, macro_tot
     real(8), dimension(num_cells) :: &
         phi
     logical :: &
@@ -53,8 +53,8 @@ program mc_slab
     ! Assignment of material variables
     delta_x(:) = struct_thickness  ! cm
     phi(:) = 0.0d+0  ! 1/cm^2-s-MeV
-    macro_scat(:) = scat_const  ! 1/cm
-    macro_tot(:) = tot_const  ! 1/cm
+    macro_scat = scat_const  ! 1/cm
+    macro_tot = tot_const  ! 1/cm
 
     ! Tallies
     leakage_l = 0.0d+0
@@ -69,12 +69,12 @@ program mc_slab
         exists = .true.
         scattered = .false.
         mu = dsqrt(rang())
-        collision_distance = collision_distance_sample(tot_const, rang())  ! cm
+        collision_distance = collision_distance_sample(macro_tot, rang())  ! cm
         ! Start of geometry
         cell_index = 1
         dist_in_cell = 0.0d+0  ! cm
         distance = 0.0d+0  ! cm
-        call move_particle(delta_x(cell_index), dist_in_cell, mu, scat_const, tot_const, &
+        call move_particle(delta_x(cell_index), dist_in_cell, mu, macro_scat, macro_tot, &
             collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
             absorbed, cell_index, num_cells, phi(cell_index))
         !call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
@@ -85,8 +85,8 @@ program mc_slab
                 azimuth = 2.0d+0 * PI * rang()
                 mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
             end if
-            collision_distance = collision_distance_sample(tot_const, rang())  ! cm
-            call move_particle(delta_x(cell_index), dist_in_cell, mu, scat_const, tot_const, &
+            collision_distance = collision_distance_sample(macro_tot, rang())  ! cm
+            call move_particle(delta_x(cell_index), dist_in_cell, mu, macro_scat, macro_tot, &
                 collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
                 absorbed, cell_index, num_cells, phi(cell_index))
             !call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
