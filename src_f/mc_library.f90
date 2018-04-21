@@ -1,14 +1,17 @@
 module mc_library
     private
     public :: &
-        distance_sample, &
+        collision_distance_sample, &
+        interface_distance_sample, &
+        material_sample, &
         check_distance, &
+        check_distance_lp, &
         tally_cells
 
     contains
 
     ! Markovian sample of a distance
-    function distance_sample(sigma_tot, rand_num) result(dist)
+    function collision_distance_sample(sigma_tot, rand_num) result(dist)
         implicit none
 
         real(8), intent(in) :: &
@@ -17,7 +20,33 @@ module mc_library
             dist
 
         dist = -dlog(rand_num) / sigma_tot
-    end function distance_sample
+    end function collision_distance_sample
+
+    function interface_distance_sample(chord, mu, rand_num) result(dist)
+        implicit none
+
+        real(8), intent(in) :: &
+            chord, mu, rand_num
+        real(8) :: &
+            dist
+
+        dist = -dlog(rand_num) * chord / dabs(mu)
+    end function interface_distance_sample
+
+    function material_sample(first_prob, rand_num) result(mat_num)
+        implicit none
+
+        real(8), intent(in) :: &
+            first_prob, rand_num
+        integer :: &
+            mat_num
+
+        if (rand_num < first_prob) then
+            mat_num = 1
+        else
+            mat_num = 2
+        end if
+    end function material_sample
 
     subroutine check_distance(thickness, sigma_scat, sigma_tot, distance, exists, leakage_l, leakage_r, absorbed)
         use mcnp_random
@@ -44,6 +73,64 @@ module mc_library
             leakage_r = leakage_r + 1.0d+0
         end if
     end subroutine check_distance
+
+    subroutine check_distance_lp(thickness, sigma_scat, sigma_tot, mu, distance, distance_to_interface, &
+        distance_to_collision, exists, leakage_l, leakage_r, absorbed, prob, flight_distance, mat_num, mat_change)
+        use mcnp_random
+
+        implicit none
+
+        real(8), intent(in) :: &
+            thickness, mu, sigma_scat, sigma_tot, distance_to_interface, distance_to_collision, prob
+        real(8), intent(inout) :: &
+            leakage_l, leakage_r, absorbed, distance
+        integer, intent(inout) :: &
+            mat_num
+        real(8), intent(out) :: &
+            flight_distance
+        logical, intent(out) :: &
+            exists, mat_change
+        real(8) :: &
+            distance_to_boundary
+
+        ! "distance" should be the current value of the particle at its location prior to flight
+        if (mu < 0.0d+0) then
+            distance_to_boundary = distance / dabs(mu)  ! cm
+        else
+            distance_to_boundary = (thickness - distance) / dabs(mu)  ! cm
+        end if
+
+        ! Determine what the minimum value is
+        if ((distance_to_boundary < distance_to_interface) .and. (distance_to_boundary < distance_to_collision)) then
+            ! Minimum is distance_to_boundary
+            exists = .false.
+            mat_change = .false.
+            flight_distance = distance_to_boundary  ! cm
+            if (mu < 0.0d+0) then
+                leakage_l = leakage_l + 1.0d+0
+            else
+                leakage_r = leakage_r + 1.0d+0
+            end if
+        else if ((distance_to_collision < distance_to_interface) .and. (distance_to_collision < distance_to_boundary)) then
+            ! Minimum is distance_to_collision
+            flight_distance = distance_to_collision  ! cm
+            mat_change = .false.
+            if (rang() > sigma_scat / sigma_tot) then
+                exists = .false.
+                absorbed = absorbed + 1.0d+0
+            end if
+        else
+            ! Minimum is distance_to_interface
+            flight_distance = distance_to_interface  ! cm
+            mat_change = .true.
+            ! Two material equations
+            if (mat_num /= 1) then
+                mat_num = 1
+            else
+                mat_num = 2
+            end if
+        end if
+    end subroutine check_distance_lp
 
     subroutine tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
         implicit none

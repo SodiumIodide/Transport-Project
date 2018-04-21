@@ -12,11 +12,11 @@ my @FILES = qw/
     mcnp_random.f90
     self_library.f90
     mc_library.f90
-    mc_slab.f90
+    mc_slab_non_mark.f90
 /;
-my $EXEC_NAME = "mc_slab.exe";
-my $OPT_LEVEL = 0;
-my $OPENMP = 0;
+my $EXEC_NAME = "mc_slab_non_mark.exe";
+my $OPT_LEVEL = 3;
+my $OPENMP = 1;
 
 sub main {
     print "Compiling using $COMPILER...\n";
