@@ -46,32 +46,31 @@ program mc_slab
         particle_counter
     real(8) :: &
         leakage_l, leakage_r, leakage_l_1, leakage_l_2, leakage_r_1, leakage_r_2, mu, mu_0, azimuth, distance, absorbed, &
-        collision_distance, interface_distance, flight_distance, dist_in_cell!, psi_bound_l, psi_bound_r
+        collision_distance, interface_distance, dist_in_cell
+    real(8), dimension(num_cells, num_materials) :: &
+        phi_mat
     real(8), dimension(num_cells) :: &
-        phi, phi_1, phi_2
+        phi
     logical :: &
-        exists, mat_change
+        exists, scattered
 
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
         point_vector
 
     ! Assignment of material variables
-    delta_x(:) = thickness / dble(num_cells)  ! cm
+    delta_x(:) = struct_thickness  ! cm
     ! Initialization of fluxes
+    phi_mat(:, :) = 0.0d+0  ! 1/cm^2-s-MeV
     phi(:) = 0.0d+0  ! 1/cm^2-s-MeV
-    phi_1(:) = 0.0d+0  ! 1/cm^2-s-MeV
-    phi_2(:) = 0.0d+0  ! 1/cm^2-s-MeV
+    !phi_1(:) = 0.0d+0  ! 1/cm^2-s-MeV
+    !phi_2(:) = 0.0d+0  ! 1/cm^2-s-MeV
     macro_tot(1) = first_xs  ! 1/cm
     macro_tot(2) = second_xs  ! 1/cm
     macro_scat(1) = macro_tot(1) * first_scat_rat  ! 1/cm
     macro_scat(2) = macro_tot(2) * second_scat_rat  ! 1/cm
     prob(1) = first_prob
     prob(2) = second_prob
-
-    ! Boundary conditions: 1/cm^2-s-MeV
-    !psi_bound_l = 1.0d+0  ! Isotropic
-    !psi_bound_r = 0.0d+0  ! Vacuum
 
     ! Tallies
     leakage_l_1 = 0.0d+0
@@ -84,71 +83,43 @@ program mc_slab
 
     call RN_init_problem(int(123456, 8), int(1, 4))
 
-    !$omp parallel do default(private) shared(delta_x,macro_scat,macro_tot) reduction(+:leakage_l,leakage_r,absorbed,phi)
+    !$omp parallel do default(private) shared(delta_x,macro_scat,macro_tot,chords) reduction(+:leakage_l,leakage_r,absorbed,phi_mat)
     do particle_counter = int(1, 8), num_particles, int(1, 8)
         ! Sample the material number
         mat_num = material_sample(first_prob, rang())
         flight_mat_num = mat_num
         ! Spawn the particle
         exists = .true.
+        scattered = .false.
         mu = dsqrt(rang())
         collision_distance = collision_distance_sample(macro_tot(mat_num), rang())  ! cm
         interface_distance = interface_distance_sample(chords(mat_num), mu, rang())  ! cm
-        flight_distance = 0.0d+0  ! cm
-        if (mat_num == 1) then
-            call check_distance_lp(thickness, macro_scat(mat_num), macro_tot(mat_num), mu, &
-            distance, interface_distance, collision_distance, exists, leakage_l_1, leakage_r_1, &
-            absorbed, prob(mat_num), flight_distance, mat_num, mat_change)
-        else
-            call check_distance_lp(thickness, macro_scat(mat_num), macro_tot(mat_num), mu, &
-            distance, interface_distance, collision_distance, exists, leakage_l_2, leakage_r_2, &
-            absorbed, prob(mat_num), flight_distance, mat_num, mat_change)
-        end if
-        distance = flight_distance * mu  ! cm
         ! Start of geometry
         cell_index = 1
         dist_in_cell = 0.0d+0  ! cm
-        if (flight_mat_num == 1) then
-            call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
-        else
-            call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
-        end if
+        distance = 0.0d+0  ! cm
+        call move_particle_lp(delta_x(cell_index), dist_in_cell, mu, macro_scat(mat_num), macro_tot(mat_num), &
+            collision_distance, interface_distance, distance, exists, scattered, leakage_l, leakage_r, &
+            absorbed, cell_index, num_cells, phi_mat(cell_index, mat_num), mat_num)
         ! Continue distance sampling and checking after a scattering collision or material change
         do while (exists)
             ! Do not recompute with a material transfer
-            if (.not. mat_change) then
+            if (scattered) then
                 mu_0 = 2.0d+0 * rang() - 1.0d+0
                 azimuth = 2.0d+0 * PI * rang()
                 mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
             end if
             collision_distance = collision_distance_sample(macro_tot(mat_num), rang())  ! cm
             interface_distance = interface_distance_sample(chords(mat_num), mu, rang())  ! cm
-            flight_mat_num = mat_num
-            if (mat_num == 1) then
-                call check_distance_lp(thickness, macro_scat(mat_num), macro_tot(mat_num), mu, &
-                distance, interface_distance, collision_distance, exists, leakage_l_1, leakage_r_1, &
-                absorbed, prob(mat_num), flight_distance, mat_num, mat_change)
-            else
-                call check_distance_lp(thickness, macro_scat(mat_num), macro_tot(mat_num), mu, &
-                distance, interface_distance, collision_distance, exists, leakage_l_2, leakage_r_2, &
-                absorbed, prob(mat_num), flight_distance, mat_num, mat_change)
-            end if
-            distance = distance + flight_distance * mu  ! cm
-            if (flight_mat_num == 1) then
-                call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
-            else
-                call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
-            end if
-            ! TODO: Bring this print statement to non-existance
-            if (((cell_index - 1) * delta_x(1) > distance) .or. (cell_index * delta_x(1) < distance)) then
-                print *, (cell_index - 1) * delta_x(1), distance, cell_index * delta_x(1)
-            end if
+            call move_particle_lp(delta_x(cell_index), dist_in_cell, mu, macro_scat(mat_num), macro_tot(mat_num), &
+                collision_distance, interface_distance, distance, exists, scattered, leakage_l, leakage_r, &
+                absorbed, cell_index, num_cells, phi_mat(cell_index, mat_num), mat_num)
         end do
     end do
     !$omp end parallel do
 
-    leakage_l = leakage_l_1 + leakage_l_2
-    leakage_r = leakage_r_1 + leakage_r_2
+    !leakage_l = leakage_l_1 + leakage_l_2
+    !leakage_r = leakage_r_1 + leakage_r_2
     print *, "Leakage Left: ", leakage_l / num_particles
     print *, "Leakage Right: ", leakage_r / num_particles
     print *, "Absorbed: ", absorbed / num_particles
@@ -159,7 +130,9 @@ program mc_slab
         !phi_1(c) = phi_1(c) / (delta_x(c) * num_particles * first_prob)
         !phi_2(c) = phi_2(c) / (delta_x(c) * num_particles * second_prob)
         !phi(c) = first_prob * phi_1(c) + second_prob * phi_2(c)
-        phi(c) = phi(c) / (delta_x(c) * num_particles)
+        phi_mat(c, 1) = phi_mat(c, 1) / (delta_x(c) * num_particles * first_prob)
+        phi_mat(c, 2) = phi_mat(c, 2) / (delta_x(c) * num_particles * second_prob)
+        phi(c) = first_prob * phi_mat(c, 1) + second_prob * phi_mat(c, 2)
     end do
 
     ! Create plot
@@ -171,12 +144,12 @@ program mc_slab
     close(7)
     open(unit=8, file="./out/mc_closure_slab_1.out", form="formatted", status="replace", action="write")
     do c = 1, num_cells
-        write(8,*) point_vector(c), phi_1(c)
+        write(8,*) point_vector(c), phi_mat(c, 1)
     end do
     close(8)
     open(unit=9, file="./out/mc_closure_slab_2.out", form="formatted", status="replace", action="write")
     do c = 1, num_cells
-        write(9,*) point_vector(c), phi_2(c)
+        write(9,*) point_vector(c), phi_mat(c, 2)
     end do
     close(9)
 end program mc_slab

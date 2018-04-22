@@ -15,8 +15,8 @@ my @FILES = qw/
     mc_slab.f90
 /;
 my $EXEC_NAME = "mc_slab.exe";
-my $OPT_LEVEL = 0;
-my $OPENMP = 0;
+my $OPT_LEVEL = 3;
+my $OPENMP = 1;
 
 sub main {
     print "Compiling using $COMPILER...\n";
