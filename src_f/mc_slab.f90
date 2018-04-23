@@ -14,13 +14,12 @@ program mc_slab
     integer, parameter :: &
         num_cells = int(2.0d+2, 4), &
         num_materials = 2, &
-        num_geom_divs = 10
+        num_geom_divs = 100
 
     ! Material properties
     real(8), parameter :: &
         thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &
-        !tot_const = 1.0d+0, &  ! 1/cm
         !first_lambda = dble(99) / dble(10), &
         !second_lambda = dble(11) / dble(10), &
         first_lambda = dble(101) / dble(20), &
@@ -41,7 +40,7 @@ program mc_slab
 
     ! Allocated as (num_ind_cells) (by subroutine)
     real(8), dimension(:), allocatable :: &
-        macro_scat, macro_tot, delta_x
+        macro_scat, macro_tot, delta_x, x_points
     ! Allocated as (num_ind_cells) (by subroutine)
     integer, dimension(:), allocatable :: &
         materials
@@ -53,7 +52,7 @@ program mc_slab
         particle_counter, realization_counter
     real(8) :: &
         leakage_l, leakage_r, mu, mu_0, azimuth, distance, absorbed, &
-        collision_distance, interface_distance, dist_in_cell, last_delta_x
+        collision_distance, dist_in_cell, last_delta_x
     real(8), dimension(num_cells, num_materials) :: &
         phi_mat
     real(8), dimension(num_cells) :: &
@@ -121,24 +120,23 @@ program mc_slab
         allocate(phi_morph(num_ind_cells))
         phi_morph(:) = 0.0d+0  ! 1/cm^2-s-MeV
 
-        !$omp parallel do default(private) shared(delta_x,macro_scat,macro_tot,chords) reduction(+:leakage_l,leakage_r,absorbed,phi_mat)
+        !$omp parallel do default(private) shared(delta_x,macro_scat,macro_tot,num_ind_cells) &
+        !$omp& reduction(+:leakage_l,leakage_r,absorbed,phi_morph)
         do particle_counter = int(1, 8), num_particles, int(1, 8)
-            ! Sample the material number
-            mat_num = material_sample(first_prob, rang())
-            flight_mat_num = mat_num
             ! Spawn the particle
             exists = .true.
             scattered = .false.
-            mu = dsqrt(rang())
-            collision_distance = collision_distance_sample(macro_tot(mat_num), rang())  ! cm
             ! Start of geometry
             cell_index = 1
             dist_in_cell = 0.0d+0  ! cm
             distance = 0.0d+0  ! cm
             last_delta_x = 0.0d+0  ! cm
-            call move_particle(delta_x(cell_index), last_delta_x, dist_in_cell, mu, macro_scat(mat_num), macro_tot(mat_num), &
-                collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
-                absorbed, cell_index, num_ind_cells, phi_morph(cell_index))
+            mu = dsqrt(rang())
+            collision_distance = collision_distance_sample(macro_tot(cell_index), rang())  ! cm
+            call move_particle(delta_x(cell_index), last_delta_x, dist_in_cell, mu, &
+                macro_scat(cell_index), macro_tot(cell_index), collision_distance, &
+                distance, exists, scattered, leakage_l, leakage_r, absorbed, cell_index, &
+                num_ind_cells, phi_morph(cell_index))
             ! Continue distance sampling and checking after a scattering collision or material change
             do while (exists)
                 ! Do not recompute with a material transfer
@@ -147,53 +145,57 @@ program mc_slab
                     azimuth = 2.0d+0 * PI * rang()
                     mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
                 end if
-                collision_distance = collision_distance_sample(macro_tot(mat_num), rang())  ! cm
+                collision_distance = collision_distance_sample(macro_tot(cell_index), rang())  ! cm
                 if (cell_index > 1) then
                     last_delta_x = delta_x(cell_index - 1)  ! cm
                 else
                     last_delta_x = 0.0d+0  ! cm
                 end if
-                call move_particle(delta_x(cell_index), last_delta_x, dist_in_cell, mu, macro_scat(mat_num), macro_tot(mat_num), &
-                    collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
-                    absorbed, cell_index, num_ind_cells, phi_morph(cell_index))
+                call move_particle(delta_x(cell_index), last_delta_x, dist_in_cell, mu, &
+                    macro_scat(cell_index), macro_tot(cell_index), collision_distance, &
+                    distance, exists, scattered, leakage_l, leakage_r, absorbed, cell_index, &
+                    num_ind_cells, phi_morph(cell_index))
             end do
         end do
         !$omp end parallel do
 
+        do k = 1, num_ind_cells
+            phi_morph(k) = phi_morph(k) / (delta_x(k) * dble(num_particles))
+        end do
+
         call material_calc(phi_morph, delta_x, num_ind_cells, materials, phi_mat, &
             struct_thickness, num_cells, num_materials)
+
+        if (mod(realization_counter, 1000) == 0) then
+            print *, "Realization number ", realization_counter
+        end if
     end do
 
-    !leakage_l = leakage_l_1 + leakage_l_2
-    !leakage_r = leakage_r_1 + leakage_r_2
-    print *, "Leakage Left: ", leakage_l / num_particles
-    print *, "Leakage Right: ", leakage_r / num_particles
-    print *, "Absorbed: ", absorbed / num_particles
-    print *, "Total: ", (leakage_l + leakage_r + absorbed) / num_particles
+    print *, "Leakage Left: ", leakage_l / dble(num_particles * num_realizations)
+    print *, "Leakage Right: ", leakage_r / dble(num_particles * num_realizations)
+    print *, "Absorbed: ", absorbed / dble(num_particles * num_realizations)
+    print *, "Total: ", (leakage_l + leakage_r + absorbed) / dble(num_particles * num_realizations)
 
     ! Average the values for flux
     do c = 1, num_cells
-        !phi_1(c) = phi_1(c) / (delta_x(c) * num_particles * first_prob)
-        !phi_2(c) = phi_2(c) / (delta_x(c) * num_particles * second_prob)
-        !phi(c) = first_prob * phi_1(c) + second_prob * phi_2(c)
-        phi_mat(c, 1) = phi_mat(c, 1) / (delta_x(c) * num_particles * first_prob)
-        phi_mat(c, 2) = phi_mat(c, 2) / (delta_x(c) * num_particles * second_prob)
+        phi_mat(c, 1) = phi_mat(c, 1) / (dble(num_realizations) * first_prob)
+        phi_mat(c, 2) = phi_mat(c, 2) / (dble(num_realizations) * second_prob)
         phi(c) = first_prob * phi_mat(c, 1) + second_prob * phi_mat(c, 2)
     end do
 
     ! Create plot
     call linspace(point_vector, 0.0d+0, thickness, num_cells)
-    open(unit=7, file="./out/mc_closure_slab.out", form="formatted", status="replace", action="write")
+    open(unit=7, file="./out/mc_slab.out", form="formatted", status="replace", action="write")
     do c = 1, num_cells
         write(7,*) point_vector(c), phi(c)
     end do
     close(7)
-    open(unit=8, file="./out/mc_closure_slab_1.out", form="formatted", status="replace", action="write")
+    open(unit=8, file="./out/mc_slab_1.out", form="formatted", status="replace", action="write")
     do c = 1, num_cells
         write(8,*) point_vector(c), phi_mat(c, 1)
     end do
     close(8)
-    open(unit=9, file="./out/mc_closure_slab_2.out", form="formatted", status="replace", action="write")
+    open(unit=9, file="./out/mc_slab_2.out", form="formatted", status="replace", action="write")
     do c = 1, num_cells
         write(9,*) point_vector(c), phi_mat(c, 2)
     end do

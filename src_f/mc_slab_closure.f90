@@ -16,7 +16,6 @@ program mc_slab
     real(8), parameter :: &
         thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &
-        !tot_const = 1.0d+0, &  ! 1/cm
         !first_lambda = dble(99) / dble(10), &
         !second_lambda = dble(11) / dble(10), &
         first_lambda = dble(101) / dble(20), &
@@ -111,20 +110,15 @@ program mc_slab
     end do
     !$omp end parallel do
 
-    !leakage_l = leakage_l_1 + leakage_l_2
-    !leakage_r = leakage_r_1 + leakage_r_2
-    print *, "Leakage Left: ", leakage_l / num_particles
-    print *, "Leakage Right: ", leakage_r / num_particles
-    print *, "Absorbed: ", absorbed / num_particles
-    print *, "Total: ", (leakage_l + leakage_r + absorbed) / num_particles
+    print *, "Leakage Left: ", leakage_l / dble(num_particles)
+    print *, "Leakage Right: ", leakage_r / dble(num_particles)
+    print *, "Absorbed: ", absorbed / dble(num_particles)
+    print *, "Total: ", (leakage_l + leakage_r + absorbed) / dble(num_particles)
 
     ! Average the values for flux
     do c = 1, num_cells
-        !phi_1(c) = phi_1(c) / (delta_x(c) * num_particles * first_prob)
-        !phi_2(c) = phi_2(c) / (delta_x(c) * num_particles * second_prob)
-        !phi(c) = first_prob * phi_1(c) + second_prob * phi_2(c)
-        phi_mat(c, 1) = phi_mat(c, 1) / (delta_x(c) * num_particles * first_prob)
-        phi_mat(c, 2) = phi_mat(c, 2) / (delta_x(c) * num_particles * second_prob)
+        phi_mat(c, 1) = phi_mat(c, 1) / (delta_x(c) * dble(num_particles) * first_prob)
+        phi_mat(c, 2) = phi_mat(c, 2) / (delta_x(c) * dble(num_particles) * second_prob)
         phi(c) = first_prob * phi_mat(c, 1) + second_prob * phi_mat(c, 2)
     end do
 
