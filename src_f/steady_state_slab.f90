@@ -15,7 +15,8 @@ program steady_state_slab
         num_cells = int(2.0d+2, 4), &
         num_ords = int(16, 4), &
         num_materials = int(2, 4), &
-        histogram_points = int(2.0d+2, 4)
+        histogram_points = int(2.0d+2, 4), &
+        num_geom_divs = 100
     logical, parameter :: &
         tally = .false., &
         make_histogram = .true.
@@ -155,7 +156,7 @@ program steady_state_slab
         ! Allocations and deallocations of delta_x and materials should be
         ! Handled by the subroutine
         call get_geometry(delta_x, x_points, materials, chord(1), chord(2), &
-                          thickness, num_ind_cells)
+                          thickness, num_ind_cells, num_geom_divs)
 
         ! Allocate and define properties
         ! Anything that depends on the number of individual cells must be reallocated
@@ -343,7 +344,7 @@ program steady_state_slab
             ! Obtain material balances
             ! Average flux in structured cells
             call material_calc(phi_morph_new, delta_x, num_ind_cells, materials, phi_mat_new, &
-                            struct_thickness, num_cells, num_materials, iterations_outer)
+                            struct_thickness, num_cells, num_materials)
             ! Average leakage from material boundaries (for balance/tally purposes)
             do k = 1, num_materials
                 ! Adjust the left switch
@@ -362,26 +363,12 @@ program steady_state_slab
                 if (left_switch) then
                     do m = 1, (num_ords / 2)
                         psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) + psi_i_m(1, m)
-                        ! Don't weight the initial zero
-                        !if (psi_mat_leak_l(m, k) == 0.0d+0) then
-                        !    psi_mat_leak_l(m, k) = psi_i_m(1, m)
-                        !else
-                        !    psi_mat_leak_l(m, k) = psi_mat_leak_l(m, k) &
-                        !        + (psi_i_m(1, m) - psi_mat_leak_l(m, k)) / dble(iterations_outer)
-                        !end if
                     end do
                 end if
                 ! Calculate the average positive leakage from right boundary
                 if (right_switch) then
                     do m = (num_ords / 2 + 1), num_ords
                         psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) + psi_i_p(num_ind_cells, m)
-                        ! Don't weight the initial zero
-                        !if (psi_mat_leak_r(m, k) == 0.0d+0) then
-                        !    psi_mat_leak_r(m, k) = psi_i_p(num_ind_cells, m)
-                        !else
-                        !    psi_mat_leak_r(m, k) = psi_mat_leak_r(m, k) &
-                        !        + (psi_i_p(num_ind_cells, m) - psi_mat_leak_r(m, k)) / dble(iterations_outer)
-                        !end if
                     end do
                 end if
             end do
@@ -525,5 +512,11 @@ program steady_state_slab
     end if
     if (allocated(phi_morph_new)) then
         deallocate(phi_morph_new)
+    end if
+    if (allocated(materials)) then
+        deallocate(materials)
+    end if
+    if (allocated(delta_x)) then
+        deallocate(delta_x)
     end if
 end program steady_state_slab

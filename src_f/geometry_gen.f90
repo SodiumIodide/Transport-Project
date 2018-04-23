@@ -9,7 +9,7 @@ module geometry_gen
     contains
 
     ! Currently written for 2 materials
-    subroutine get_geometry(x_dist, x_arr, materials, chord_a, chord_b, thickness, num_cells)
+    subroutine get_geometry(x_dist, x_arr, materials, chord_a, chord_b, thickness, num_cells, num_divs)
         implicit none
 
         ! x_dist measures the delta_x values
@@ -27,14 +27,8 @@ module geometry_gen
         real(8) :: &
             cons_thickness, rand_num, distance, chord, prob_a
         ! The total number of cells to utilize for each geometry segment
-        integer, parameter :: &
-            num_divs = 100
-
-        !if (thickness > 5.0d+0) then
-        !    num_divs = 100
-        !else
-        !    num_divs = 1000
-        !end if
+        integer, intent(in) :: &
+            num_divs
 
         ! Determine first material to use
         prob_a = chord_a / (chord_a + chord_b)

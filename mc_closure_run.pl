@@ -4,12 +4,12 @@ use strict;
 
 # Execute the compiled Fortran files and produce a plot
 
-my $EXEC_NAME = "mc_slab.exe";
+my $EXEC_NAME = "mc_slab_closure.exe";
 
 sub main() {
     print "Running $EXEC_NAME...\n";
     system "./bin/$EXEC_NAME";
-    #system "python ./src_py/mc_closure_plot.py";
+    system "python ./src_py/mc_closure_plot.py";
     print "Done\n";
 }
 

@@ -15,6 +15,8 @@ program geometry_test
         num_cells, i
     integer(8), parameter :: &
         seed = int(123456789, 8)
+    integer, parameter :: &
+        num_divs = 100
 
     thickness = 1.0d+1  ! cm
     cons_thickness = 0.0d+0  ! cm
@@ -27,7 +29,7 @@ program geometry_test
 
     call RN_init_problem(seed, 1)
 
-    call get_geometry(x_dist, x_arr, materials, chord_a, chord_b, thickness, num_cells)
+    call get_geometry(x_dist, x_arr, materials, chord_a, chord_b, thickness, num_cells, num_divs)
 
     !call RN_init_problem(int(1234567, 8), 1)
     !do while (cons_thickness < thickness)

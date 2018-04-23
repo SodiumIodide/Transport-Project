@@ -35,7 +35,7 @@ def realization_plot(realname):
 
 def main():
     '''Main wrapper'''
-    plotname = "mc_slab.png"
+    plotname = "mc_slab_non_mark.png"
     filenames = ["./out/mc_slab.out"]
     for i, filename in enumerate(filenames):
         x_values, flux = get_data(filename)

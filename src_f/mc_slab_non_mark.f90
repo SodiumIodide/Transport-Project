@@ -74,10 +74,9 @@ program mc_slab
         cell_index = 1
         dist_in_cell = 0.0d+0  ! cm
         distance = 0.0d+0  ! cm
-        call move_particle(delta_x(cell_index), dist_in_cell, mu, macro_scat, macro_tot, &
+        call move_particle(struct_thickness, struct_thickness, dist_in_cell, mu, macro_scat, macro_tot, &
             collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
             absorbed, cell_index, num_cells, phi(cell_index))
-        !call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
         ! Continue distance sampling and checking as long as particle exists (scatter or in-geometry transfer)
         do while (exists)
             if (scattered) then
@@ -86,10 +85,9 @@ program mc_slab
                 mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
             end if
             collision_distance = collision_distance_sample(macro_tot, rang())  ! cm
-            call move_particle(delta_x(cell_index), dist_in_cell, mu, macro_scat, macro_tot, &
+            call move_particle(struct_thickness, struct_thickness, dist_in_cell, mu, macro_scat, macro_tot, &
                 collision_distance, distance, exists, scattered, leakage_l, leakage_r, &
                 absorbed, cell_index, num_cells, phi(cell_index))
-            !call tally_cells(cell_index, dist_in_cell, flight_distance, mu, delta_x, num_cells, phi)
         end do
     end do
     !$omp end parallel do
