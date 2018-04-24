@@ -41,3 +41,9 @@ Paramter | $10^6$ Realizations | $10^7$ Realizations
 --- | --- | ---
 Reflection | 0.4799704 | 0.4799719
 Transmission | 0.0157653 | 0.0158591
+
+Monte Carlo Data:
+Parameter | Atomic Mix (1E7 p) | Closure (1E7 p) | Exact (1E4 p, 5E5 r)
+--- | --- | --- | ---
+Reflection | 0.4785959 | 0.3700725 | 
+Transmission | 0.0038917 | 0.0238894 | 

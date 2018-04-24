@@ -36,3 +36,9 @@ Parameter | Published Exact | Published Model | Calculated Exact | Calculated Mo
 --- | --- | --- | --- | --- | --- | ---
 Reflection | 0.0856 | 0.0591 | 0.0859326 | 0.0592395 | 0.0593678 | 0.0198688
 Transmission | 0.0016 | 0.0015 | 0.0016421 | 0.001539 | 0.0015566 | 0.0000086
+
+Monte Carlo Data:
+Parameter | Atomic Mix (1E7 p) | Closure (1E7 p) | Exact (1E4 p, 5E5 r)
+--- | --- | --- | ---
+Reflection | 0.0196113 | 0.0586887 | 
+Transmission | 0.0000087 | 0.0015868 | 

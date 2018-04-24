@@ -25,9 +25,9 @@ def get_data(filename):
 def main():
     '''Main wrapper'''
     alpha_flag = False
-    filenames = ["./out/mc_closure_slab.out",
-                 "./out/mc_closure_slab_1.out",
-                 "./out/mc_closure_slab_2.out",
+    filenames = ["./out/mc_slab_closure.out",
+                 "./out/mc_slab_closure_1.out",
+                 "./out/mc_slab_closure_2.out",
                  "./out/steady_state_slab_closure_alpha.out",
                  "./out/steady_state_slab_closure_alpha_1.out",
                  "./out/steady_state_slab_closure_alpha_2.out"]
