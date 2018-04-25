@@ -30,8 +30,8 @@ program mc_slab
         second_xs = dble(200) / dble(101), &
         first_prob = first_lambda / (first_lambda + second_lambda), &
         second_prob = 1.0d+0 - first_prob, &
-        first_scat_rat = 0.9d+0, &
-        second_scat_rat = 0.9d+0
+        first_scat_rat = 0.0d+0, &
+        second_scat_rat = 1.0d+0
 
     ! Material variables
     real(8), dimension(num_materials) :: &

@@ -32,6 +32,10 @@ module mc_library
         dist = -dlog(rand_num) * chord / dabs(mu)
     end function interface_distance_sample
 
+    function interface_distance_sample_alpha(chord, alpha, mu, rand_num) result (dist)
+
+    end function interface_distance_sample_alpha
+
     function material_sample(first_prob, rand_num) result(mat_num)
         implicit none
 
