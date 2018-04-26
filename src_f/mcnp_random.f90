@@ -236,8 +236,8 @@ CONTAINS
   subroutine expire( i, c1, c2 )
     integer,          intent(in) :: i
     character(len=*), intent(in) :: c1, c2
-    write(*,*) ' ********** error: ',c1
-    write(*,*) ' ********** error: ',c2
+    write(*,*) ' ********** error: ',i,c1
+    write(*,*) ' ********** error: ',i,c2
     stop 0
   end subroutine expire
 
