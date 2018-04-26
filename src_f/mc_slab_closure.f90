@@ -46,7 +46,8 @@ program mc_slab
     real(8) :: &
         leakage_l, leakage_r, mu, mu_0, azimuth, distance, absorbed, &
         collision_distance, interface_distance, dist_in_cell, &
-        alpha, sig_a_av, sig_t_av, first_abs, second_abs
+        alpha, sig_a_av, sig_t_av, first_abs, second_abs, &
+        leakage_l_var, leakage_r_var, absorbed_var
     real(8), dimension(num_cells, num_materials) :: &
         phi_mat
     real(8), dimension(num_cells) :: &
@@ -91,6 +92,10 @@ program mc_slab
     leakage_l = 0.0d+0
     leakage_r = 0.0d+0
     absorbed = 0.0d+0
+    ! Variances
+    leakage_l_var = 0.0d+0
+    leakage_r_var = 0.0d+0
+    absorbed_var = 0.0d+0
 
     call RN_init_problem(int(123456, 8), int(1, 4))
 
@@ -129,10 +134,16 @@ program mc_slab
     end do
     !$omp end parallel do
 
-    print *, "Leakage Left: ", leakage_l / dble(num_particles)
-    print *, "Leakage Right: ", leakage_r / dble(num_particles)
-    print *, "Absorbed: ", absorbed / dble(num_particles)
-    print *, "Total: ", (leakage_l + leakage_r + absorbed) / dble(num_particles)
+    leakage_l_var = dsqrt((leakage_l / dble(num_particles) - (leakage_l / dble(num_particles))**2) &
+        * dble(num_particles) / dble(num_particles - 1)) / dsqrt(dble(num_particles))
+    leakage_r_var = dsqrt((leakage_r / dble(num_particles) - (leakage_r / dble(num_particles))**2) &
+        * dble(num_particles) / dble(num_particles - 1)) / dsqrt(dble(num_particles))
+    absorbed_var = dsqrt((absorbed / dble(num_particles) - (absorbed / dble(num_particles))**2) &
+        * dble(num_particles) / dble(num_particles - 1)) / dsqrt(dble(num_particles))
+    print *, "Leakage Left: ", leakage_l / dble(num_particles), " +/- ", leakage_l_var
+    print *, "Leakage Right: ", leakage_r / dble(num_particles), " +/- ", leakage_r_var
+    print *, "Absorbed: ", absorbed / dble(num_particles), " +/- ", absorbed_var
+    print *, "Balance (should be 1.0): ", (leakage_l + leakage_r + absorbed) / dble(num_particles)
 
     ! Average the values for flux
     do c = 1, num_cells

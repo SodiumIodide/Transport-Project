@@ -10,7 +10,8 @@ program mc_slab
     ! Constant parameters
     integer(8), parameter :: &
         num_particles = int(1.0d+4, 8), &
-        num_realizations = int(5.0d+5, 8)
+        num_realizations = int(5.0d+5, 8), &
+        num_samples = num_particles * num_realizations
     integer, parameter :: &
         num_cells = int(2.0d+2, 4), &
         num_materials = 2, &
@@ -52,7 +53,8 @@ program mc_slab
         particle_counter, realization_counter
     real(8) :: &
         leakage_l, leakage_r, mu, mu_0, azimuth, distance, absorbed, &
-        collision_distance, dist_in_cell, last_delta_x
+        collision_distance, dist_in_cell, last_delta_x, &
+        leakage_l_var, leakage_r_var, absorbed_var
     real(8), dimension(num_cells, num_materials) :: &
         phi_mat
     real(8), dimension(num_cells) :: &
@@ -83,6 +85,10 @@ program mc_slab
     leakage_l = 0.0d+0
     leakage_r = 0.0d+0
     absorbed = 0.0d+0
+    ! Variances
+    leakage_l_var = 0.0d+0
+    leakage_r_var = 0.0d+0
+    absorbed_var = 0.0d+0
 
     call RN_init_problem(int(123456, 8), int(1, 4))
 
@@ -171,10 +177,16 @@ program mc_slab
         end if
     end do
 
-    print *, "Leakage Left: ", leakage_l / dble(num_particles * num_realizations)
-    print *, "Leakage Right: ", leakage_r / dble(num_particles * num_realizations)
-    print *, "Absorbed: ", absorbed / dble(num_particles * num_realizations)
-    print *, "Total: ", (leakage_l + leakage_r + absorbed) / dble(num_particles * num_realizations)
+    leakage_l_var = dsqrt((leakage_l / dble(num_samples) - (leakage_l / dble(num_samples))**2) &
+        * dble(num_samples) / dble(num_samples - 1)) / dsqrt(dble(num_samples))
+    leakage_r_var = dsqrt((leakage_r / dble(num_samples) - (leakage_r / dble(num_samples))**2) &
+        * dble(num_samples) / dble(num_samples - 1)) / dsqrt(dble(num_samples))
+    absorbed_var = dsqrt((absorbed / dble(num_samples) - (absorbed / dble(num_samples))**2) &
+        * dble(num_samples) / dble(num_samples - 1)) / dsqrt(dble(num_samples))
+    print *, "Leakage Left: ", leakage_l / dble(num_samples)
+    print *, "Leakage Right: ", leakage_r / dble(num_samples)
+    print *, "Absorbed: ", absorbed / dble(num_samples)
+    print *, "Total: ", (leakage_l + leakage_r + absorbed) / dble(num_samples)
 
     ! Average the values for flux
     do c = 1, num_cells
