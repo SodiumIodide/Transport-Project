@@ -7,7 +7,7 @@ program mc_slab
 
     ! Constant parameters
     integer(8), parameter :: &
-        num_particles = int(1.0d+8, 8)
+        num_particles = int(1.0d+9, 8)
     integer, parameter :: &
         num_cells = int(2.0d+2, 4)
 

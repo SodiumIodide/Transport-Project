@@ -238,7 +238,7 @@ CONTAINS
     character(len=*), intent(in) :: c1, c2
     write(*,*) ' ********** error: ',c1
     write(*,*) ' ********** error: ',c2
-    stop i
+    stop 0
   end subroutine expire
 
   !-------------------------------------------------------------------
