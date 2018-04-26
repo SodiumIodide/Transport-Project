@@ -11,23 +11,25 @@ program mc_slab
     integer, parameter :: &
         num_cells = int(2.0d+2, 4), &
         num_materials = 2
+    logical, parameter :: &
+        use_alpha = .true.
 
     ! Material properties
     real(8), parameter :: &
         thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &
-        first_lambda = dble(99) / dble(100), &
-        second_lambda = dble(11) / dble(100), &
-        !first_lambda = dble(101) / dble(20), &
-        !second_lambda = dble(101) / dble(20), &
-        first_xs = dble(10) / dble(99), &
-        second_xs = dble(100) / dble(11), &
-        !first_xs = dble(2) / dble(101), &
-        !second_xs = dble(200) / dble(101), &
+        !first_lambda = dble(99) / dble(10), &
+        !second_lambda = dble(11) / dble(10), &
+        first_lambda = dble(101) / dble(20), &
+        second_lambda = dble(101) / dble(20), &
+        !first_xs = dble(10) / dble(99), &
+        !second_xs = dble(100) / dble(11), &
+        first_xs = dble(2) / dble(101), &
+        second_xs = dble(200) / dble(101), &
         first_prob = first_lambda / (first_lambda + second_lambda), &
         second_prob = 1.0d+0 - first_prob, &
-        first_scat_rat = 0.0d+0, &
-        second_scat_rat = 1.0d+0
+        first_scat_rat = 0.9d+0, &
+        second_scat_rat = 0.9d+0
 
     ! Material variables
     real(8), dimension(num_cells) :: &
@@ -43,7 +45,8 @@ program mc_slab
         particle_counter
     real(8) :: &
         leakage_l, leakage_r, mu, mu_0, azimuth, distance, absorbed, &
-        collision_distance, interface_distance, dist_in_cell
+        collision_distance, interface_distance, dist_in_cell, &
+        alpha, sig_a_av, sig_t_av, first_abs, second_abs
     real(8), dimension(num_cells, num_materials) :: &
         phi_mat
     real(8), dimension(num_cells) :: &
@@ -54,6 +57,8 @@ program mc_slab
     ! Additional variables (plotting, etc.)
     real(8), dimension(num_cells) :: &
         point_vector
+    character(:), allocatable :: &
+        filename
 
     ! Assignment of material variables
     delta_x(:) = struct_thickness  ! cm
@@ -69,6 +74,19 @@ program mc_slab
     prob(1) = first_prob
     prob(2) = second_prob
 
+    if (use_alpha) then
+        first_abs = (1.0d+0 - first_scat_rat) * first_xs
+        second_abs = (1.0d+0 - second_scat_rat) * second_xs
+        sig_a_av = first_prob * first_abs + second_prob * second_abs
+        sig_t_av = first_prob * first_xs + second_prob * second_xs
+        alpha = dsqrt(sig_a_av * sig_t_av) &
+            * (sig_a_av * (second_xs - first_xs)**2 + sig_t_av * (second_abs - first_abs)**2) &
+            / ((sig_a_av * (second_xs - first_xs))**2 + (sig_t_av * (second_abs - first_abs))**2)
+    else
+        alpha = 1.0d+0
+    end if
+    print *, "Alpha: ", alpha
+
     ! Tallies
     leakage_l = 0.0d+0
     leakage_r = 0.0d+0
@@ -76,7 +94,8 @@ program mc_slab
 
     call RN_init_problem(int(123456, 8), int(1, 4))
 
-    !$omp parallel do default(private) shared(delta_x,macro_scat,macro_tot,chords) reduction(+:leakage_l,leakage_r,absorbed,phi_mat)
+    !$omp parallel do default(private) shared(delta_x,macro_scat,macro_tot,chords,alpha) &
+    !$omp& reduction(+:leakage_l,leakage_r,absorbed,phi_mat)
     do particle_counter = int(1, 8), num_particles, int(1, 8)
         ! Sample the material number
         mat_num = material_sample(first_prob, rang())
@@ -85,7 +104,7 @@ program mc_slab
         scattered = .false.
         mu = dsqrt(rang())
         collision_distance = collision_distance_sample(macro_tot(mat_num), rang())  ! cm
-        interface_distance = interface_distance_sample(chords(mat_num), mu, rang())  ! cm
+        interface_distance = interface_distance_sample(chords(mat_num), mu, rang(), alpha)  ! cm
         ! Start of geometry
         cell_index = 1
         dist_in_cell = 0.0d+0  ! cm
@@ -102,7 +121,7 @@ program mc_slab
                 mu = mu * mu_0 + dsqrt(1.0d+0 - mu * mu) * dsqrt(1.0d+0 - mu_0 * mu_0) * dcos(azimuth)
             end if
             collision_distance = collision_distance_sample(macro_tot(mat_num), rang())  ! cm
-            interface_distance = interface_distance_sample(chords(mat_num), mu, rang())  ! cm
+            interface_distance = interface_distance_sample(chords(mat_num), mu, rang(), alpha)  ! cm
             call move_particle_lp(delta_x(cell_index), dist_in_cell, mu, macro_scat(mat_num), macro_tot(mat_num), &
                 collision_distance, interface_distance, distance, exists, scattered, leakage_l, leakage_r, &
                 absorbed, cell_index, num_cells, phi_mat(cell_index, mat_num), mat_num)
@@ -124,19 +143,38 @@ program mc_slab
 
     ! Create plot
     call linspace(point_vector, 0.0d+0, thickness, num_cells)
-    open(unit=7, file="./out/mc_slab_closure.out", form="formatted", status="replace", action="write")
+    if (use_alpha) then
+        filename = "./out/mc_slab_closure_alpha.out"
+    else
+        filename = "./out/mc_slab_closure.out"
+    end if
+    open(unit=7, file=filename, form="formatted", status="replace", action="write")
     do c = 1, num_cells
         write(7,*) point_vector(c), phi(c)
     end do
     close(7)
-    open(unit=8, file="./out/mc_slab_closure_1.out", form="formatted", status="replace", action="write")
+    if (use_alpha) then
+        filename = "./out/mc_slab_closure_alpha_1.out"
+    else
+        filename = "./out/mc_slab_closure_1.out"
+    end if
+    open(unit=8, file=filename, form="formatted", status="replace", action="write")
     do c = 1, num_cells
         write(8,*) point_vector(c), phi_mat(c, 1)
     end do
     close(8)
-    open(unit=9, file="./out/mc_slab_closure_2.out", form="formatted", status="replace", action="write")
+    if (use_alpha) then
+        filename = "./out/mc_slab_closure_alpha_2.out"
+    else
+        filename = "./out/mc_slab_closure_2.out"
+    end if
+    open(unit=9, file=filename, form="formatted", status="replace", action="write")
     do c = 1, num_cells
         write(9,*) point_vector(c), phi_mat(c, 2)
     end do
     close(9)
+
+    if (allocated(filename)) then
+        deallocate(filename)
+    end if
 end program mc_slab

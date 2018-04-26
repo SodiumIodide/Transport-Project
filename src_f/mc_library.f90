@@ -21,15 +21,15 @@ module mc_library
         dist = -dlog(rand_num) / sigma_tot
     end function collision_distance_sample
 
-    function interface_distance_sample(chord, mu, rand_num) result(dist)
+    function interface_distance_sample(chord, mu, rand_num, alpha) result(dist)
         implicit none
 
         real(8), intent(in) :: &
-            chord, mu, rand_num
+            chord, mu, rand_num, alpha
         real(8) :: &
             dist
 
-        dist = -dlog(rand_num) * chord / dabs(mu)
+        dist = -dlog(rand_num) * chord / (alpha * dabs(mu))
     end function interface_distance_sample
 
     function material_sample(first_prob, rand_num) result(mat_num)

@@ -28,9 +28,9 @@ def main():
     filenames = ["./out/mc_slab_closure.out",
                  "./out/mc_slab_closure_1.out",
                  "./out/mc_slab_closure_2.out",
-                 "./out/steady_state_slab_closure_alpha.out",
-                 "./out/steady_state_slab_closure_alpha_1.out",
-                 "./out/steady_state_slab_closure_alpha_2.out"]
+                 "./out/mc_slab_closure_alpha.out",
+                 "./out/mc_slab_closure_alpha_1.out",
+                 "./out/mc_slab_closure_alpha_2.out"]
     for i, filename in enumerate(filenames):
         if os.path.isfile(filename):
             x_values, flux = get_data(filename)
@@ -49,7 +49,7 @@ def main():
     plt.xlabel("x (cm)")
     plt.ylabel("Flux (1/cm^2-s-MeV)")
     if alpha_flag:
-        plotname = "steady_state_slab_closure_alpha.png"
+        plotname = "mc_closure_alpha.png"
     else:
         plotname = "mc_closure_slab.png"
     plt.savefig(f"./plots/{plotname}")

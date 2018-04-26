@@ -38,10 +38,10 @@ Reflection | 0.4466 | 0.3272 | 0.4476828 | 0.3282107 | 0.3509208 | 0.4807157
 Transmission | 0.1037 | 0.1195 | 0.1046484 | 0.1198366 | 0.0659534 | 0.0038574
 
 Monte Carlo Data:
-Parameter | Atomic Mix (1E7 p) | Closure (1E7 p) | Exact (1E4 p, 5E5 r)
---- | --- | --- | ---
-Reflection | 0.4785959 | 0.3260395 | 0.4451237
-Transmission | 0.0038917 | 0.1194641 | 0.1042761
+Parameter | Atomic Mix (1E7 p) | Closure (1E7 p) | Alpha (1E7 p) | Exact (1E4 p, 5E5 r)
+--- | --- | --- | --- | ---
+Reflection | 0.4785959 | 0.3260395 | 0.3485520 | 0.4451237
+Transmission | 0.0038917 | 0.1194641 | 0.0657349 | 0.1042761
 
 Above calculated exact data is for $1 \times 10^6$ realizations. See following table for others.
 
