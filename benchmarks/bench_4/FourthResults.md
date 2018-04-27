@@ -40,5 +40,5 @@ Transmission | 0.0981 | 0.1278 | 0.0982338 | 0.1281861 | 0.0665488 | 0.0047435
 Monte Carlo Data:
 Parameter | Atomic Mix (1E7 p) | Closure (1E7 p) | Alpha (1E7) | Exact (1E4 p, 5E5 r)
 --- | --- | --- | --- | ---
-Reflection | 0.4958776 | 0.1803571 | 0.2780248 | 
-Transmission | 0.004993414 | 0.1284392 | 0.0670678 | 
+Reflection | 0.4958776 | 0.1803571 | 0.2780248 | 0.2371104
+Transmission | 0.004993414 | 0.1284392 | 0.0670678 | 0.0983796

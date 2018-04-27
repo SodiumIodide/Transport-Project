@@ -21,8 +21,8 @@ program mc_slab
     real(8), parameter :: &
         thickness = 1.0d+1, &  ! cm
         struct_thickness = thickness / dble(num_cells), &
-        first_lambda = dble(99) / dble(10), &
-        second_lambda = dble(11) / dble(10), &
+        first_lambda = dble(99) / dble(100), &
+        second_lambda = dble(11) / dble(100), &
         !first_lambda = dble(101) / dble(20), &
         !second_lambda = dble(101) / dble(20), &
         first_xs = dble(10) / dble(99), &
@@ -31,8 +31,8 @@ program mc_slab
         !second_xs = dble(200) / dble(101), &
         first_prob = first_lambda / (first_lambda + second_lambda), &
         second_prob = 1.0d+0 - first_prob, &
-        first_scat_rat = 0.0d+0, &
-        second_scat_rat = 1.0d+0
+        first_scat_rat = 0.9d+0, &
+        second_scat_rat = 0.9d+0
 
     ! Material variables
     real(8), dimension(num_materials) :: &
