@@ -86,8 +86,8 @@ module self_library
                 legendre(:, i + 1) = ((2.0d+0 * i - 1.0d+0) * y_space * legendre(:, i) &
                                       - (i - 1.0d+0) * legendre(:, i - 1)) / dble(i)
             end do
-            
-            ! Derivative of the Legendre polynomial
+
+            ! Derivative of the Legendre Polynomial
             prime = order_two * (legendre(:, order_one) - &
                                  y_space * legendre(:, order_two)) / (1 - y_space**2)
 

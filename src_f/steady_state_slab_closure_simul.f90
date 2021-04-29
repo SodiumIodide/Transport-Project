@@ -111,7 +111,7 @@ program steady_state_slab_closure_simul
     !psi_bound_l(num_ords) = 1.0d+0 / (mu(num_ords) * weights(num_ords))
 
     ! Right boundary
-    !psi_bound_r(:) = 1.0d+0  ! Isotropic source
+    !psi_bound_r(:) = 2.0d+0  ! Isotropic source
     psi_bound_r(:) = 0.0d+0  ! Vacuum
     ! Beam source (in conj. with vacuum):
     !psi_bound_r(1) = 1.0d+0 / (mu(1) * weights(1))

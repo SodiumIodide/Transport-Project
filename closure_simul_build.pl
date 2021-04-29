@@ -25,7 +25,7 @@ sub main {
     # Compile individual objects
     foreach my $src_name (@FILES) {
         my $obj_name = $src_name =~ s/\.f90/\.o/r;
-        comp("$COMPILER -Wall -c $SRC/$src_name -llapack -o $BIN/$obj_name -O$OPT_LEVEL");
+        comp("$COMPILER -c $SRC/$src_name -llapack -o $BIN/$obj_name -O$OPT_LEVEL");
         $obj_string = $obj_string . " $BIN/" . $obj_name;
     }
 

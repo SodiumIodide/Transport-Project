@@ -38,6 +38,7 @@ def main():
     plt.ylabel("Material Number")
     plt.ylim(0, 5)
     plt.xlim(0, 10)
+    plt.tight_layout()
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
     with open("./out/geometry_1.out", "w") as out_1:

@@ -52,6 +52,7 @@ def main():
         plotname = "mc_closure_alpha.png"
     else:
         plotname = "mc_closure_slab.png"
+    plt.tight_layout()
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
 

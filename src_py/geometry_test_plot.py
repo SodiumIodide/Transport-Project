@@ -61,6 +61,7 @@ def main():
     plt.ylabel("Material Number")
     plt.grid(which='major', axis='x')
     plt.ylim(0, 5)
+    plt.tight_layout()
     plt.savefig(f"./plots/{plotname}")
     with open("./out/geometry_1.out", "w") as out_1:
         for i, point in enumerate(mat_1_x):

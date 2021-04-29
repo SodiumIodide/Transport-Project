@@ -17,7 +17,7 @@ module dynamic_arrays
             list
         real(8), dimension(:), allocatable :: &
             clist
-        
+
         ! Match the size of the list
         if (allocated(list)) then
             isize = size(list)
@@ -62,7 +62,7 @@ module dynamic_arrays
             do i = 1, isize
                 clist(i) = list(i)
             end do
-            
+
             ! Append the element
             clist(isize + 1) = element
 

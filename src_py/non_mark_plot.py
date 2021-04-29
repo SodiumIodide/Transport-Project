@@ -29,6 +29,7 @@ def realization_plot(realname):
     plt.grid(which='major', axis='both')
     plt.xlabel("x (cm)")
     plt.ylabel("Flux (1/cm^2-s-MeV)")
+    plt.tight_layout()
     plt.savefig(plotname)
     plt.clf()
     plt.cla()
@@ -43,6 +44,7 @@ def main():
     plt.grid(which='major', axis='both')
     plt.xlabel("x (cm)")
     plt.ylabel("Flux (1/cm^2-s-MeV)")
+    plt.tight_layout()
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
 

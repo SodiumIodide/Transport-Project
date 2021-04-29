@@ -27,8 +27,9 @@ def plot_overlap(first_x, first_y, first_label, second_x, second_y, second_label
     '''Produce a figure of overlapping data'''
     length = 3  # Guaranteed length of array: total, mat_1, mat_2, atomic_mix
     colors = ['b', 'c', 'r']
-    for index in range(length):
+    for index in range(1, length):
         if index == 0:
+            pass
             legend_entry = "Total Material"
         else:
             legend_entry = f"Material {index}"
@@ -39,10 +40,11 @@ def plot_overlap(first_x, first_y, first_label, second_x, second_y, second_label
     plt.legend()
     plt.xlabel('x (cm)')
     plt.ylabel('Flux (1/cm^2-s-MeV)')
-    plt.xlim(xmin=0.0)
+    plt.xlim(left=0.0)
     #plt.ylim(ymin=0.0)
     plt.yscale('log')
     #plt.ylim([1e-3, 1e1])
+    plt.tight_layout()
     plt.savefig(f"{destination}.png")
     plt.clf()
     plt.cla()

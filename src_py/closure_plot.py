@@ -52,6 +52,7 @@ def main():
         plotname = "steady_state_slab_closure_alpha.png"
     else:
         plotname = "steady_state_slab_closure.png"
+    plt.tight_layout()
     plt.savefig(f"./plots/{plotname}")
     print(f"Plot saved as {plotname}")
 
